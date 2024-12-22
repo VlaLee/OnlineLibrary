@@ -557,28 +557,31 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 -- поиск авторов по имени/фамилии/отчеству
 CREATE OR REPLACE FUNCTION online_library_functional.search_authors_by_author_nsp(in_author_nsp varchar(64))
-RETURNS TABLE(
-	author_id int,
-	first_name varchar(64),
-	last_name varchar(64),
-	patronymic varchar(64),
-	rating numeric(4, 2)
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_author_nsp_lower varchar(64);
+    in_author_nsp_lower varchar(64);
 BEGIN
-	in_author_nsp_lower = LOWER(in_author_nsp);
+    in_author_nsp_lower = LOWER(in_author_nsp);
 
-    RETURN QUERY
-    SELECT *
-    FROM online_library_tables.author
-    WHERE LOWER(first_name) = in_author_nsp_lower OR LOWER(last_name) = in_author_nsp_lower
-    	OR LOWER(patronymic) = in_author_nsp_lower;
-END
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'author_id', author_id,
+            'first_name', first_name,
+            'last_name', last_name,
+            'patronymic', patronymic,
+            'rating', rating
+        ))
+        FROM online_library_tables.author
+        WHERE LOWER(online_library_tables.author.first_name) = in_author_nsp_lower 
+           OR LOWER(online_library_tables.author.last_name) = in_author_nsp_lower
+           OR LOWER(online_library_tables.author.patronymic) = in_author_nsp_lower
+    );
+END;
 $$ LANGUAGE plpgsql;
+
+SELECT online_library_functional.search_authors_by_author_nsp('фёдор');
 
 
 -- поиск издательств по имени

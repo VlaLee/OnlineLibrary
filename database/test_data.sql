@@ -33,10 +33,10 @@ INSERT INTO online_library_tables.book_author VALUES
 (6, 3),
 (7, 3);
 
-INSERT INTO online_library_tables.reader (first_name, last_name, patronymic, phone, email) VALUES
-('Владислав', 'Ли', 'Владимирович', '88005553535', 'vlavlali@inbox.ru'),
-('Владимир', 'Ктотов', 'Владимирович', '81602223445', 'vladimirkrutoy@chill.ru'),
-('NoName', 'Pupupu', null, '80001112233', 'hzktononame@noname.ru');
+INSERT INTO online_library_tables.reader (first_name, last_name, patronymic, phone, email, reader_password) VALUES
+('Владислав', 'Ли', 'Владимирович', '88005553535', 'vlavlali@inbox.ru', '111'),
+('Владимир', 'Ктотов', 'Владимирович', '81602223445', 'vladimirkrutoy@chill.ru', '222'),
+('NoName', 'Pupupu', null, '80001112233', 'hzktononame@noname.ru', '321');
 
 INSERT INTO online_library_tables.saving (reader_id, book_id) VALUES
 (1, 6),
