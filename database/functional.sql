@@ -17,6 +17,7 @@ DROP FUNCTION IF EXISTS online_library_functional.update_book_rating;
 DROP FUNCTION IF EXISTS online_library_functional.update_author_rating;
 DROP FUNCTION IF EXISTS online_library_functional.delete_books_after_author_delete;
 DROP FUNCTION IF EXISTS online_library_functional.get_all_data_from_tables;
+DROP FUNCTION IF EXISTS online_library_functional.get_all_data_from_table_by_table_name;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_table_by_name;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_all_tables();
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_user;
@@ -153,6 +154,21 @@ BEGIN
         RETURN QUERY EXECUTE select_query;
     END LOOP;
 END;
+$$ LANGUAGE plpgsql;
+
+
+-- получение всех данных по названию таблицы
+CREATE OR REPLACE FUNCTION online_library_functional.get_all_data_from_table_by_table_name(table_name text)
+RETURNS jsonb AS $$
+DECLARE
+	select_query text;
+	result_info jsonb;
+BEGIN
+	select_query = format('SELECT jsonb_agg(t) FROM online_library_tables.%I t', table_name);
+	EXECUTE select_query INTO result_info;
+
+	RETURN COALESCE(result_info, '[]'::jsonb);
+END
 $$ LANGUAGE plpgsql;
 
 
@@ -464,10 +480,6 @@ BEGIN
 	RETURN result_row;
 END
 $$ LANGUAGE plpgsql;
-
-
---
-
 
 
 -- поиск книг по жанру
