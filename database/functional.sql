@@ -634,7 +634,7 @@ RETURNS jsonb AS $$
 BEGIN
     RETURN (
         SELECT jsonb_agg(jsonb_build_object(
-            'email', email,
+            'user_password', user_password,
 			'is_admin', is_admin
         ))
         FROM online_library_tables.user u
