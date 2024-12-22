@@ -55,7 +55,8 @@ CREATE TABLE online_library.reader
 	last_name varchar(64) NOT NULL,
 	patronymic varchar(64),
 	phone varchar(32) NOT NULL UNIQUE,
-	email varchar(256) NOT NULL UNIQUE
+	email varchar(256) NOT NULL UNIQUE,
+	reader_password varchar(256)
 );
 
 CREATE TABLE online_library.saving

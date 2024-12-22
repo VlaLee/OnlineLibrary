@@ -15,6 +15,8 @@ DROP TRIGGER IF EXISTS trg_delete_books_after_author_delete ON online_library.au
 DROP FUNCTION IF EXISTS online_library_functional.track_saving_data;
 DROP FUNCTION IF EXISTS online_library_functional.update_book_rating;
 DROP FUNCTION IF EXISTS online_library_functional.update_author_rating;
+DROP FUNCTION IF EXISTS online_library_functional.delete_books_after_author_delete;
+DROP FUNCTION IF EXISTS online_library_functional.get_all_data_from_tables;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_table_by_name;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_all_tables;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_reader;
@@ -23,8 +25,28 @@ DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_book;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_publisher;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_book_author;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_author;
-DROP FUNCTION IF EXISTS online_library_functional.set_rating_by_saving_id;
-
+DROP FUNCTION IF EXISTS online_library_functional.update_phone_into_table_reader;
+DROP FUNCTION IF EXISTS online_library_functional.update_email_into_table_reader;
+DROP FUNCTION IF EXISTS online_library_functional.set_patronymic_into_table_reader;
+DROP FUNCTION IF EXISTS online_library_functional.set_has_read_into_table_saving;
+DROP FUNCTION IF EXISTS online_library_functional.set_rating_into_table_saving;
+DROP FUNCTION IF EXISTS online_library_functional.update_into_table_book;
+DROP FUNCTION IF EXISTS online_library_functional.update_into_table_publisher;
+DROP FUNCTION IF EXISTS online_library_functional.update_into_table_book_author;
+DROP FUNCTION IF EXISTS online_library_functional.update_into_table_author;
+DROP FUNCTION IF EXISTS online_library_functional.find_row_by_id;
+DROP FUNCTION IF EXISTS online_library_functional.search_books_by_genre;
+DROP FUNCTION IF EXISTS online_library_functional.search_books_by_title;
+DROP FUNCTION IF EXISTS online_library_functional.search_books_by_author_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.search_books_by_publisher_name;
+DROP FUNCTION IF EXISTS online_library_functional.search_authors_by_author_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.search_publishers_by_name;
+DROP FUNCTION IF EXISTS online_library_functional.search_publishers_by_city;
+DROP FUNCTION IF EXISTS online_library_functional.search_readers_by_reader_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.delete_row_by_id;
+DROP FUNCTION IF EXISTS online_library_functional.delete_author_by_author_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.delete_publisher_by_name;
+DROP FUNCTION IF EXISTS online_library_functional.delete_reader_by_reader_nsp;
 
 
 ---
@@ -173,11 +195,12 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_reader(
 	in_last_name varchar(64),
 	in_phone varchar(32),
 	in_email varchar(256),
+	in_password varchar(256),
 	in_patronymic varchar(64) DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.reader (first_name, last_name, patronymic, phone, email)
-	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email);
+	INSERT INTO online_library.reader (first_name, last_name, patronymic, phone, email, reader_password)
+	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email, in_password);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении читателя: %', SQLERRM;
 END
@@ -416,9 +439,6 @@ EXCEPTION WHEN OTHERS THEN
 END
 $$ LANGUAGE plpgsql;
 
-
--- ПРОВЕРИТЬ ИНСЕРТЫ
-
 ---
 --- ФУНКЦИИ ДЛЯ ПОИСКА
 ---
@@ -621,8 +641,8 @@ BEGIN
 	in_reader_nsp_lower = LOWER(in_reader_nsp);
 
     RETURN QUERY
-    SELECT *
-    FROM online_library.reader
+    SELECT r.first_name, r.last_name, r.patronymic, r.phone, r.email
+    FROM online_library.reader r
     WHERE LOWER(first_name) = in_reader_nsp_lower OR LOWER(last_name) = in_reader_nsp_lower
     	OR LOWER(patronymic) = in_reader_nsp_lower;
 END
