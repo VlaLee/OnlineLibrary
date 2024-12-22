@@ -213,11 +213,11 @@ BEGIN
 	DROP FUNCTION IF EXISTS online_library_functional.search_publishers_by_name;
 	DROP FUNCTION IF EXISTS online_library_functional.search_publishers_by_city;
 	DROP FUNCTION IF EXISTS online_library_functional.search_users_by_user_nsp;
+	DROP FUNCTION IF EXISTS online_library_functional.get_is_admin_by_user_email_and_password;
 	DROP FUNCTION IF EXISTS online_library_functional.delete_row_by_id;
 	DROP FUNCTION IF EXISTS online_library_functional.delete_author_by_author_nsp;
 	DROP FUNCTION IF EXISTS online_library_functional.delete_publisher_by_name;
 	DROP FUNCTION IF EXISTS online_library_functional.delete_user_by_user_nsp;
-	DROP FUNCTION IF EXISTS online_library_functional.search_password_and_is_admin_by_user_email;
 
 
 	--

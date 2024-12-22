@@ -628,17 +628,16 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- поиск паролей и статуса is_admin по логину
-CREATE OR REPLACE FUNCTION online_library_functional.search_password_and_is_admin_by_user_email(in_email varchar(256))
-RETURNS jsonb AS $$
+-- поиск статуса is_admin по логину и паролю пользователя
+CREATE OR REPLACE FUNCTION online_library_functional.get_is_admin_by_user_email_and_password(in_email varchar(256),
+in_password varchar(256)) RETURNS jsonb AS $$
 BEGIN
     RETURN (
         SELECT jsonb_agg(jsonb_build_object(
-            'user_password', user_password,
 			'is_admin', is_admin
         ))
         FROM online_library_tables.user u
-        WHERE u.email = in_email
+        WHERE u.email = in_email AND u.user_password = in_password
     );
 END;
 $$ LANGUAGE plpgsql;
