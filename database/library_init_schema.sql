@@ -17,7 +17,8 @@ BEGIN
 		patronymic varchar(64),
 		phone varchar(32) NOT NULL UNIQUE,
 		email varchar(256) NOT NULL UNIQUE,
-		user_password varchar(256)
+		user_password varchar(256) NOT NULL UNIQUE,
+		is_admin boolean NOT NULL DEFAULT false
 	);
 	
 	CREATE TABLE online_library_tables.saving

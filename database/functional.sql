@@ -18,7 +18,7 @@ DROP FUNCTION IF EXISTS online_library_functional.update_author_rating;
 DROP FUNCTION IF EXISTS online_library_functional.delete_books_after_author_delete;
 DROP FUNCTION IF EXISTS online_library_functional.get_all_data_from_tables;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_table_by_name;
-DROP FUNCTION IF EXISTS online_library_functional.truncate_all_tables;
+DROP FUNCTION IF EXISTS online_library_functional.truncate_all_tables();
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_user;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_saving;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_book;
@@ -47,6 +47,7 @@ DROP FUNCTION IF EXISTS online_library_functional.delete_row_by_id;
 DROP FUNCTION IF EXISTS online_library_functional.delete_author_by_author_nsp;
 DROP FUNCTION IF EXISTS online_library_functional.delete_publisher_by_name;
 DROP FUNCTION IF EXISTS online_library_functional.delete_user_by_user_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.search_password_and_is_admin_by_user_email;
 
 
 ---
@@ -202,7 +203,7 @@ BEGIN
 	INSERT INTO online_library_tables.user (first_name, last_name, patronymic, phone, email, user_password)
 	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email, in_password);
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка при добавлении читателя: %', SQLERRM;
+	RAISE EXCEPTION 'Ошибка при добавлении пользователя: %', SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
@@ -289,7 +290,7 @@ BEGIN
 	SET phone = in_phone
 	WHERE user_id = in_user_id;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении номера телефона читателя: %', in_user_id, SQLERRM;
+	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении номера телефона пользователя: %', in_user_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
@@ -301,7 +302,7 @@ BEGIN
 	SET email = in_email
 	WHERE user_id = in_user_id;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении адреса электронной почты читателя: %', in_user_id, SQLERRM;
+	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении адреса электронной почты пользователя: %', in_user_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
@@ -324,7 +325,7 @@ BEGIN
 		RAISE EXCEPTION 'Ошибка [user_id = %]: поле "отчество" уже заполнено', in_user_id;
 	END IF;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении отчества читателя: %', in_user_id, SQLERRM;
+	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении отчества пользователя: %', in_user_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
@@ -438,6 +439,7 @@ EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка [author_id = %] при изменении автора: %', in_author_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
+
 
 ---
 --- ФУНКЦИИ ДЛЯ ПОИСКА
@@ -650,18 +652,32 @@ BEGIN
             'last_name', last_name,
             'patronymic', patronymic,
             'phone', phone,
-            'email', email
+            'email', email,
+			'is_admin', is_admin
         ))
         FROM online_library_tables.user r
-        WHERE LOWER(first_name) = in_user_nsp_lower 
-           OR LOWER(last_name) = in_user_nsp_lower
-           OR LOWER(patronymic) = in_user_nsp_lower
+        WHERE LOWER(r.first_name) = in_user_nsp_lower 
+           OR LOWER(r.last_name) = in_user_nsp_lower
+           OR LOWER(r.patronymic) = in_user_nsp_lower
     );
 END;
 $$ LANGUAGE plpgsql;
 
 
--- 
+-- поиск паролей и статуса is_admin по логину
+CREATE OR REPLACE FUNCTION online_library_functional.search_password_and_is_admin_by_user_email(in_email varchar(256))
+RETURNS jsonb AS $$
+BEGIN
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'email', email,
+			'is_admin', is_admin
+        ))
+        FROM online_library_tables.user u
+        WHERE u.email = in_email
+    );
+END;
+$$ LANGUAGE plpgsql;
 
 
 ---
@@ -720,7 +736,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
--- удаление читателя по имени
+-- удаление пользователя по имени
 CREATE OR REPLACE FUNCTION online_library_functional.delete_user_by_user_nsp(in_user_nsp varchar(64))
 RETURNS VOID AS $$
 DECLARE
