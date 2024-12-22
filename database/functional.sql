@@ -208,13 +208,13 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_user(
-	in_first_name varchar(64),
-	in_last_name varchar(64),
-	in_phone varchar(32),
+	in_first_name varchar(256),
+	in_last_name varchar(256),
+	in_phone varchar(256),
 	in_email varchar(256),
 	in_password varchar(256),
 	in_is_admin boolean DEFAULT false,
-	in_patronymic varchar(64) DEFAULT NULL
+	in_patronymic varchar(256) DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
 	INSERT INTO online_library_tables.user (first_name, last_name, patronymic, phone, email, user_password, is_admin)
@@ -301,7 +301,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.update_phone_into_table_user(in_user_id int,
-	in_phone varchar(32)) RETURNS VOID AS $$
+	in_phone varchar(256)) RETURNS VOID AS $$
 BEGIN
 	UPDATE online_library_tables.user
 	SET phone = in_phone
@@ -325,9 +325,9 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.set_patronymic_into_table_user(in_user_id int,
-	in_patronymic varchar(64)) RETURNS VOID AS $$
+	in_patronymic varchar(256)) RETURNS VOID AS $$
 DECLARE
-	current_patronymic varchar(64);
+	current_patronymic varchar(256);
 BEGIN
 	SELECT patronymic
 	INTO current_patronymic
@@ -655,10 +655,10 @@ $$ LANGUAGE plpgsql;
 
 
 -- поиск читателей
-CREATE OR REPLACE FUNCTION online_library_functional.search_users_by_user_nsp(in_user_nsp varchar(64))
+CREATE OR REPLACE FUNCTION online_library_functional.search_users_by_user_nsp(in_user_nsp varchar(256))
 RETURNS jsonb AS $$
 DECLARE
-    in_user_nsp_lower varchar(64);
+    in_user_nsp_lower varchar(256);
 BEGIN
     in_user_nsp_lower = LOWER(in_user_nsp);
 
@@ -754,10 +754,10 @@ $$ LANGUAGE plpgsql;
 
 
 -- удаление пользователя по имени
-CREATE OR REPLACE FUNCTION online_library_functional.delete_user_by_user_nsp(in_user_nsp varchar(64))
+CREATE OR REPLACE FUNCTION online_library_functional.delete_user_by_user_nsp(in_user_nsp varchar(256))
 RETURNS VOID AS $$
 DECLARE
-	in_user_nsp_lower varchar(64);
+	in_user_nsp_lower varchar(256);
 BEGIN
 	in_user_nsp_lower = LOWER(in_user_nsp);
 

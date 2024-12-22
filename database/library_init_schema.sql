@@ -12,12 +12,12 @@ BEGIN
 	CREATE TABLE online_library_tables.user
 	(
 		user_id serial PRIMARY KEY,
-		first_name varchar(64) NOT NULL,
-		last_name varchar(64) NOT NULL,
-		patronymic varchar(64),
-		phone varchar(32) NOT NULL UNIQUE,
+		first_name varchar(256) NOT NULL,
+		last_name varchar(256) NOT NULL,
+		patronymic varchar(256),
+		phone varchar(256) NOT NULL UNIQUE,
 		email varchar(256) NOT NULL UNIQUE,
-		user_password varchar(256) NOT NULL UNIQUE,
+		user_password varchar(256) NOT NULL,
 		is_admin boolean NOT NULL DEFAULT false
 	);
 	
