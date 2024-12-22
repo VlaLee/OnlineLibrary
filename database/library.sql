@@ -17,7 +17,7 @@ SET row_security = off;
 --
 
 
-DROP TABLE IF EXISTS online_library_tables.reader CASCADE;
+DROP TABLE IF EXISTS online_library_tables.user CASCADE;
 DROP TABLE IF EXISTS online_library_tables.saving CASCADE;
 DROP TABLE IF EXISTS online_library_tables.book CASCADE;
 DROP TABLE IF EXISTS online_library_tables.publisher CASCADE;
@@ -39,7 +39,7 @@ DROP SCHEMA IF EXISTS online_library_functional;
 --
 
 
-CREATE SCHEMA online_library_tables AUTHORIZATION library_owner; 
+CREATE SCHEMA online_library_tables AUTHORIZATION library_owner;
 CREATE SCHEMA online_library_functional AUTHORIZATION library_owner;
 
 
@@ -48,22 +48,23 @@ CREATE SCHEMA online_library_functional AUTHORIZATION library_owner;
 --
 
 
-CREATE TABLE online_library_tables.reader
+CREATE TABLE online_library_tables.user
 (
-	reader_id serial PRIMARY KEY,
+	user_id serial PRIMARY KEY,
 	first_name varchar(64) NOT NULL,
 	last_name varchar(64) NOT NULL,
 	patronymic varchar(64),
 	phone varchar(32) NOT NULL UNIQUE,
 	email varchar(256) NOT NULL UNIQUE,
-	reader_password varchar(256)
+	user_password varchar(256) NOT NULL,
+	is_admin boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE online_library_tables.saving
 (
 	saving_id serial PRIMARY KEY,
 	saving_date date NOT NULL,
-	reader_id int NOT NULL,
+	user_id int NOT NULL,
 	book_id int NOT NULL,
 	has_read boolean DEFAULT false,
 	rating numeric(4, 2) DEFAULT NULL
@@ -112,7 +113,7 @@ CREATE TABLE online_library_tables.author
 
 
 ALTER TABLE online_library_tables.saving
-ADD CONSTRAINT fk_saving_reader FOREIGN KEY (reader_id) REFERENCES online_library_tables.reader (reader_id)
+ADD CONSTRAINT fk_saving_user FOREIGN KEY (user_id) REFERENCES online_library_tables.user (user_id)
 	ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE online_library_tables.saving
@@ -138,7 +139,7 @@ ADD CONSTRAINT fk_book_author_author FOREIGN KEY (author_id) REFERENCES online_l
 
 
 ALTER TABLE online_library_tables.saving
-ADD CONSTRAINT unq_saving_reader_id_book_id UNIQUE (reader_id, book_id);
+ADD CONSTRAINT unq_saving_user_id_book_id UNIQUE (user_id, book_id);
 
 ALTER TABLE online_library_tables.publisher
 ADD CONSTRAINT unq_publisher_city_address UNIQUE (city, address);

@@ -19,15 +19,15 @@ DROP FUNCTION IF EXISTS online_library_functional.delete_books_after_author_dele
 DROP FUNCTION IF EXISTS online_library_functional.get_all_data_from_tables;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_table_by_name;
 DROP FUNCTION IF EXISTS online_library_functional.truncate_all_tables;
-DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_reader;
+DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_user;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_saving;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_book;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_publisher;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_book_author;
 DROP FUNCTION IF EXISTS online_library_functional.insert_into_table_author;
-DROP FUNCTION IF EXISTS online_library_functional.update_phone_into_table_reader;
-DROP FUNCTION IF EXISTS online_library_functional.update_email_into_table_reader;
-DROP FUNCTION IF EXISTS online_library_functional.set_patronymic_into_table_reader;
+DROP FUNCTION IF EXISTS online_library_functional.update_phone_into_table_user;
+DROP FUNCTION IF EXISTS online_library_functional.update_email_into_table_user;
+DROP FUNCTION IF EXISTS online_library_functional.set_patronymic_into_table_user;
 DROP FUNCTION IF EXISTS online_library_functional.set_has_read_into_table_saving;
 DROP FUNCTION IF EXISTS online_library_functional.set_rating_into_table_saving;
 DROP FUNCTION IF EXISTS online_library_functional.update_into_table_book;
@@ -42,11 +42,11 @@ DROP FUNCTION IF EXISTS online_library_functional.search_books_by_publisher_name
 DROP FUNCTION IF EXISTS online_library_functional.search_authors_by_author_nsp;
 DROP FUNCTION IF EXISTS online_library_functional.search_publishers_by_name;
 DROP FUNCTION IF EXISTS online_library_functional.search_publishers_by_city;
-DROP FUNCTION IF EXISTS online_library_functional.search_readers_by_reader_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.search_users_by_user_nsp;
 DROP FUNCTION IF EXISTS online_library_functional.delete_row_by_id;
 DROP FUNCTION IF EXISTS online_library_functional.delete_author_by_author_nsp;
 DROP FUNCTION IF EXISTS online_library_functional.delete_publisher_by_name;
-DROP FUNCTION IF EXISTS online_library_functional.delete_reader_by_reader_nsp;
+DROP FUNCTION IF EXISTS online_library_functional.delete_user_by_user_nsp;
 
 
 ---
@@ -190,7 +190,7 @@ $$ LANGUAGE plpgsql;
 ---
 
 
-CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_reader(
+CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_user(
 	in_first_name varchar(64),
 	in_last_name varchar(64),
 	in_phone varchar(32),
@@ -199,7 +199,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_reader(
 	in_patronymic varchar(64) DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library_tables.reader (first_name, last_name, patronymic, phone, email, reader_password)
+	INSERT INTO online_library_tables.user (first_name, last_name, patronymic, phone, email, user_password)
 	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email, in_password);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении читателя: %', SQLERRM;
@@ -208,12 +208,12 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_saving(
-	in_reader_id int,
+	in_user_id int,
 	in_book_id int
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library_tables.saving (reader_id, book_id)
-	VALUES (in_reader_id, in_book_id);
+	INSERT INTO online_library_tables.saving (user_id, book_id)
+	VALUES (in_user_id, in_book_id);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении пользовательского сохранения: %', SQLERRM;
 END
@@ -282,49 +282,49 @@ $$ LANGUAGE plpgsql;
 ---
 
 
-CREATE OR REPLACE FUNCTION online_library_functional.update_phone_into_table_reader(in_reader_id int,
+CREATE OR REPLACE FUNCTION online_library_functional.update_phone_into_table_user(in_user_id int,
 	in_phone varchar(32)) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library_tables.reader
+	UPDATE online_library_tables.user
 	SET phone = in_phone
-	WHERE reader_id = in_reader_id;
+	WHERE user_id = in_user_id;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [reader_id = %] при изменении номера телефона читателя: %', in_reader_id, SQLERRM;
+	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении номера телефона читателя: %', in_user_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION online_library_functional.update_email_into_table_reader(in_reader_id int,
+CREATE OR REPLACE FUNCTION online_library_functional.update_email_into_table_user(in_user_id int,
 	in_email varchar(256)) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library_tables.reader
+	UPDATE online_library_tables.user
 	SET email = in_email
-	WHERE reader_id = in_reader_id;
+	WHERE user_id = in_user_id;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [reader_id = %] при изменении адреса электронной почты читателя: %', in_reader_id, SQLERRM;
+	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении адреса электронной почты читателя: %', in_user_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION online_library_functional.set_patronymic_into_table_reader(in_reader_id int,
+CREATE OR REPLACE FUNCTION online_library_functional.set_patronymic_into_table_user(in_user_id int,
 	in_patronymic varchar(64)) RETURNS VOID AS $$
 DECLARE
 	current_patronymic varchar(64);
 BEGIN
 	SELECT patronymic
 	INTO current_patronymic
-	FROM online_library_tables.reader
-	WHERE reader_id = in_reader_id;
+	FROM online_library_tables.user
+	WHERE user_id = in_user_id;
 
 	IF current_patronymic IS NULL THEN
-		UPDATE online_library_tables.reader
+		UPDATE online_library_tables.user
 		SET patronymic = in_patronymic
-		WHERE reader_id = in_reader_id;
+		WHERE user_id = in_user_id;
 	ELSE
-		RAISE EXCEPTION 'Ошибка [reader_id = %]: поле "отчество" уже заполнено', in_reader_id;
+		RAISE EXCEPTION 'Ошибка [user_id = %]: поле "отчество" уже заполнено', in_user_id;
 	END IF;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [reader_id = %] при изменении отчества читателя: %', in_reader_id, SQLERRM;
+	RAISE EXCEPTION 'Ошибка [user_id = %] при изменении отчества читателя: %', in_user_id, SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
@@ -636,29 +636,32 @@ $$ LANGUAGE plpgsql;
 
 
 -- поиск читателей
-CREATE OR REPLACE FUNCTION online_library_functional.search_readers_by_reader_nsp(in_reader_nsp varchar(64))
+CREATE OR REPLACE FUNCTION online_library_functional.search_users_by_user_nsp(in_user_nsp varchar(64))
 RETURNS jsonb AS $$
 DECLARE
-    in_reader_nsp_lower varchar(64);
+    in_user_nsp_lower varchar(64);
 BEGIN
-    in_reader_nsp_lower = LOWER(in_reader_nsp);
+    in_user_nsp_lower = LOWER(in_user_nsp);
 
     RETURN (
         SELECT jsonb_agg(jsonb_build_object(
-            'reader_id', reader_id,
+            'user_id', user_id,
             'first_name', first_name,
             'last_name', last_name,
             'patronymic', patronymic,
             'phone', phone,
             'email', email
         ))
-        FROM online_library_tables.reader r
-        WHERE LOWER(first_name) = in_reader_nsp_lower 
-           OR LOWER(last_name) = in_reader_nsp_lower
-           OR LOWER(patronymic) = in_reader_nsp_lower
+        FROM online_library_tables.user r
+        WHERE LOWER(first_name) = in_user_nsp_lower 
+           OR LOWER(last_name) = in_user_nsp_lower
+           OR LOWER(patronymic) = in_user_nsp_lower
     );
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- 
 
 
 ---
@@ -718,16 +721,16 @@ $$ LANGUAGE plpgsql;
 
 
 -- удаление читателя по имени
-CREATE OR REPLACE FUNCTION online_library_functional.delete_reader_by_reader_nsp(in_reader_nsp varchar(64))
+CREATE OR REPLACE FUNCTION online_library_functional.delete_user_by_user_nsp(in_user_nsp varchar(64))
 RETURNS VOID AS $$
 DECLARE
-	in_reader_nsp_lower varchar(64);
+	in_user_nsp_lower varchar(64);
 BEGIN
-	in_reader_nsp_lower = LOWER(in_reader_nsp);
+	in_user_nsp_lower = LOWER(in_user_nsp);
 
-    DELETE FROM online_library_tables.reader
-        WHERE LOWER(first_name) = in_reader_nsp_lower OR LOWER(last_name) = in_reader_nsp_lower
-    	OR LOWER(patronymic) = in_reader_nsp_lower;
+    DELETE FROM online_library_tables.user
+        WHERE LOWER(first_name) = in_user_nsp_lower OR LOWER(last_name) = in_user_nsp_lower
+    	OR LOWER(patronymic) = in_user_nsp_lower;
 
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при удалении автора по имени/фамилии/отчеству: %', SQLERRM;
