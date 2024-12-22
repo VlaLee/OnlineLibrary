@@ -465,97 +465,104 @@ $$ LANGUAGE plpgsql;
 
 -- поиск книг по жанру
 CREATE OR REPLACE FUNCTION online_library_functional.search_books_by_genre(in_genre varchar(64))
-RETURNS TABLE(
-	book_id int,
-	title varchar(256),
-	genre varchar(64),
-	rating numeric(4, 2),
-	publisher_id int,
-	publication_year int) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_genre_lower varchar(64);
+    in_genre_lower varchar(64);
 BEGIN
-	in_genre_lower = LOWER(in_genre);
+    in_genre_lower = LOWER(in_genre);
 
-    RETURN QUERY
-    SELECT *
-    FROM online_library_tables.book
-    WHERE LOWER(online_library_tables.book.genre) = in_genre_lower;
-END
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'book_id', book_id,
+            'title', title,
+            'genre', genre,
+            'rating', rating,
+            'publisher_id', publisher_id,
+            'publication_year', publication_year
+        ))
+        FROM online_library_tables.book
+        WHERE LOWER(online_library_tables.book.genre) = in_genre_lower
+    );
+END;
 $$ LANGUAGE plpgsql;
 
 
 -- поиск книг по названию
 CREATE OR REPLACE FUNCTION online_library_functional.search_books_by_title(in_title varchar(256))
-RETURNS TABLE(
-	book_id int,
-	title varchar(256),
-	genre varchar(64),
-	rating numeric(4, 2),
-	publisher_id int,
-	publication_year int
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_title_lower varchar(256);
+    in_title_lower varchar(256);
 BEGIN
-	in_title_lower = LOWER(in_title);
+    in_title_lower = LOWER(in_title);
 
-    RETURN QUERY
-    SELECT *
-    FROM online_library_tables.book
-    WHERE LOWER(online_library_tables.book.title) = in_title_lower;
-END
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'book_id', book_id,
+            'title', title,
+            'genre', genre,
+            'rating', rating,
+            'publisher_id', publisher_id,
+            'publication_year', publication_year
+        ))
+        FROM online_library_tables.book
+        WHERE LOWER(online_library_tables.book.title) = in_title_lower
+    );
+END;
 $$ LANGUAGE plpgsql;
 
 
 -- поиск книг по авторам (имя, либо фамилия, либо отчество)
 CREATE OR REPLACE FUNCTION online_library_functional.search_books_by_author_nsp(in_author_nsp varchar(64))
-RETURNS TABLE(
-	book_id int,
-	title varchar(256),
-	genre varchar(64),
-	rating numeric(4, 2),
-	publisher_id int,
-	publication_year int
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_author_nsp_lower varchar(64);
+    in_author_nsp_lower varchar(64);
 BEGIN
-	in_author_nsp_lower = LOWER(in_author_nsp);
+    in_author_nsp_lower = LOWER(in_author_nsp);
 
-    RETURN QUERY
-    SELECT b.book_id, b.title, b.genre, b.rating, b.publisher_id, b.publication_year
-    FROM online_library_tables.book b
-    	INNER JOIN online_library_tables.book_author ba ON b.book_id = ba.book_id
-    	INNER JOIN online_library_tables.author a ON ba.author_id = a.author_id
-    WHERE LOWER(a.first_name) = in_author_nsp_lower OR LOWER(a.last_name) = in_author_nsp_lower
-    	OR LOWER(a.patronymic) = in_author_nsp_lower;
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'book_id', b.book_id,
+            'title', b.title,
+            'genre', b.genre,
+            'rating', b.rating,
+            'publisher_id', b.publisher_id,
+            'publication_year', b.publication_year
+        ))
+        FROM online_library_tables.book b
+        INNER JOIN online_library_tables.book_author ba ON b.book_id = ba.book_id
+        INNER JOIN online_library_tables.author a ON ba.author_id = a.author_id
+        WHERE LOWER(a.first_name) = in_author_nsp_lower 
+           OR LOWER(a.last_name) = in_author_nsp_lower
+           OR LOWER(a.patronymic) = in_author_nsp_lower
+    );
 END;
 $$ LANGUAGE plpgsql;
 
 
 -- поиск книг по издательствам
 CREATE OR REPLACE FUNCTION online_library_functional.search_books_by_publisher_name(in_publisher_name varchar(64))
-RETURNS TABLE(
-	book_id int,
-	title varchar(256),
-	genre varchar(64),
-	rating numeric(4, 2),
-	publisher_id int,
-	publication_year int
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_publisher_name_lower varchar(64);
+    in_publisher_name_lower varchar(64);
 BEGIN
-	in_publisher_name_lower = LOWER(in_publisher_name);
+    in_publisher_name_lower = LOWER(in_publisher_name);
 
-    RETURN QUERY
-    SELECT b.book_id, b.title, b.genre, b.rating, b.publisher_id, b.publication_year
-    FROM online_library_tables.book b
-    	INNER JOIN online_library_tables.publisher p ON b.publisher_id = p.publisher_id
-    WHERE LOWER(p.publisher_name) = in_publisher_name_lower;
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'book_id', b.book_id,
+            'title', b.title,
+            'genre', b.genre,
+            'rating', b.rating,
+            'publisher_id', b.publisher_id,
+            'publication_year', b.publication_year
+        ))
+        FROM online_library_tables.book b
+        INNER JOIN online_library_tables.publisher p ON b.publisher_id = p.publisher_id
+        WHERE LOWER(p.publisher_name) = in_publisher_name_lower
+    );
 END;
 $$ LANGUAGE plpgsql;
+
 
 -- поиск авторов по имени/фамилии/отчеству
 CREATE OR REPLACE FUNCTION online_library_functional.search_authors_by_author_nsp(in_author_nsp varchar(64))
@@ -581,74 +588,76 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-SELECT online_library_functional.search_authors_by_author_nsp('фёдор');
-
 
 -- поиск издательств по имени
 CREATE OR REPLACE FUNCTION online_library_functional.search_publishers_by_name(in_name varchar(64))
-RETURNS TABLE(
-	publisher_id int,
-	publisher_name varchar(64),
-	city varchar(64),
-	address varchar(64),
-	email varchar(256)
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_name_lower varchar(64);
+    in_name_lower varchar(64);
 BEGIN
-	in_name_lower = LOWER(in_name);
+    in_name_lower = LOWER(in_name);
 
-    RETURN QUERY
-    SELECT *
-    FROM online_library_tables.publisher
-    WHERE LOWER(online_library_tables.publisher.publisher_name) = in_name_lower;
-END
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'publisher_id', publisher_id,
+            'publisher_name', publisher_name,
+            'city', city,
+            'address', address,
+            'email', email
+        ))
+        FROM online_library_tables.publisher
+        WHERE LOWER(publisher_name) = in_name_lower
+    );
+END;
 $$ LANGUAGE plpgsql;
 
 
 -- поиск издательств по городам
 CREATE OR REPLACE FUNCTION online_library_functional.search_publishers_by_city(in_city varchar(64))
-RETURNS TABLE(
-	publisher_id int,
-	publisher_name varchar(64),
-	city varchar(64),
-	address varchar(64),
-	email varchar(256)
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_city_lower varchar(64);
+    in_city_lower varchar(64);
 BEGIN
-	in_city_lower = LOWER(in_city);
+    in_city_lower = LOWER(in_city);
 
-    RETURN QUERY
-    SELECT *
-    FROM online_library_tables.publisher
-    WHERE LOWER(online_library_tables.publisher.city) = in_city_lower;
-END
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'publisher_id', publisher_id,
+            'publisher_name', publisher_name,
+            'city', city,
+            'address', address,
+            'email', email
+        ))
+        FROM online_library_tables.publisher
+        WHERE LOWER(city) = in_city_lower
+    );
+END;
 $$ LANGUAGE plpgsql;
 
 
 -- поиск читателей
 CREATE OR REPLACE FUNCTION online_library_functional.search_readers_by_reader_nsp(in_reader_nsp varchar(64))
-RETURNS TABLE(
-	reader_id int,
-	first_name varchar(64),
-	last_name varchar(64),
-	patronymic varchar(64),
-	phone varchar(32),
-	email varchar(256)
-) AS $$
+RETURNS jsonb AS $$
 DECLARE
-	in_reader_nsp_lower varchar(64);
+    in_reader_nsp_lower varchar(64);
 BEGIN
-	in_reader_nsp_lower = LOWER(in_reader_nsp);
+    in_reader_nsp_lower = LOWER(in_reader_nsp);
 
-    RETURN QUERY
-    SELECT r.first_name, r.last_name, r.patronymic, r.phone, r.email
-    FROM online_library_tables.reader r
-    WHERE LOWER(first_name) = in_reader_nsp_lower OR LOWER(last_name) = in_reader_nsp_lower
-    	OR LOWER(patronymic) = in_reader_nsp_lower;
-END
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'reader_id', reader_id,
+            'first_name', first_name,
+            'last_name', last_name,
+            'patronymic', patronymic,
+            'phone', phone,
+            'email', email
+        ))
+        FROM online_library_tables.reader r
+        WHERE LOWER(first_name) = in_reader_nsp_lower 
+           OR LOWER(last_name) = in_reader_nsp_lower
+           OR LOWER(patronymic) = in_reader_nsp_lower
+    );
+END;
 $$ LANGUAGE plpgsql;
 
 
