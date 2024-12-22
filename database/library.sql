@@ -39,8 +39,8 @@ DROP SCHEMA IF EXISTS online_library_functional;
 --
 
 
-CREATE SCHEMA online_library_tables AUTHORIZATION library_owner_vlad; 
-CREATE SCHEMA online_library_functional AUTHORIZATION library_owner_vlad;
+CREATE SCHEMA online_library_tables AUTHORIZATION library_owner; 
+CREATE SCHEMA online_library_functional AUTHORIZATION library_owner;
 
 
 --
