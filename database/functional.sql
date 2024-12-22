@@ -197,11 +197,12 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_user(
 	in_phone varchar(32),
 	in_email varchar(256),
 	in_password varchar(256),
+	in_is_admin boolean DEFAULT false,
 	in_patronymic varchar(64) DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library_tables.user (first_name, last_name, patronymic, phone, email, user_password)
-	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email, in_password);
+	INSERT INTO online_library_tables.user (first_name, last_name, patronymic, phone, email, user_password, is_admin)
+	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email, in_password, is_admin);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении пользователя: %', SQLERRM;
 END
@@ -463,6 +464,10 @@ BEGIN
 	RETURN result_row;
 END
 $$ LANGUAGE plpgsql;
+
+
+--
+
 
 
 -- поиск книг по жанру
