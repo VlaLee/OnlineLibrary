@@ -17,12 +17,12 @@ SET row_security = off;
 --
 
 
-DROP TABLE IF EXISTS online_library.reader CASCADE;
-DROP TABLE IF EXISTS online_library.saving CASCADE;
-DROP TABLE IF EXISTS online_library.book CASCADE;
-DROP TABLE IF EXISTS online_library.publisher CASCADE;
-DROP TABLE IF EXISTS online_library.book_author CASCADE;
-DROP TABLE IF EXISTS online_library.author CASCADE;
+DROP TABLE IF EXISTS online_library_tables.reader CASCADE;
+DROP TABLE IF EXISTS online_library_tables.saving CASCADE;
+DROP TABLE IF EXISTS online_library_tables.book CASCADE;
+DROP TABLE IF EXISTS online_library_tables.publisher CASCADE;
+DROP TABLE IF EXISTS online_library_tables.book_author CASCADE;
+DROP TABLE IF EXISTS online_library_tables.author CASCADE;
 
 
 --
@@ -30,7 +30,7 @@ DROP TABLE IF EXISTS online_library.author CASCADE;
 --
 
 
-DROP SCHEMA IF EXISTS online_library;
+DROP SCHEMA IF EXISTS online_library_tables;
 DROP SCHEMA IF EXISTS online_library_functional;
 
 
@@ -39,7 +39,7 @@ DROP SCHEMA IF EXISTS online_library_functional;
 --
 
 
-CREATE SCHEMA online_library AUTHORIZATION library_owner_vlad; 
+CREATE SCHEMA online_library_tables AUTHORIZATION library_owner_vlad; 
 CREATE SCHEMA online_library_functional AUTHORIZATION library_owner_vlad;
 
 
@@ -48,7 +48,7 @@ CREATE SCHEMA online_library_functional AUTHORIZATION library_owner_vlad;
 --
 
 
-CREATE TABLE online_library.reader
+CREATE TABLE online_library_tables.reader
 (
 	reader_id serial PRIMARY KEY,
 	first_name varchar(64) NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE online_library.reader
 	reader_password varchar(256)
 );
 
-CREATE TABLE online_library.saving
+CREATE TABLE online_library_tables.saving
 (
 	saving_id serial PRIMARY KEY,
 	saving_date date NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE online_library.saving
 	rating numeric(4, 2) DEFAULT NULL
 );
 
-CREATE TABLE online_library.book
+CREATE TABLE online_library_tables.book
 (
 	book_id serial PRIMARY KEY,
 	title varchar(256) NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE online_library.book
 	publication_year int NOT NULL
 );
 
-CREATE TABLE online_library.publisher
+CREATE TABLE online_library_tables.publisher
 (
 	publisher_id serial PRIMARY KEY,
 	publisher_name varchar(64) NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE online_library.publisher
 	email varchar(256) NOT NULL UNIQUE
 );
 
-CREATE TABLE online_library.book_author
+CREATE TABLE online_library_tables.book_author
 (
 	book_id int NOT NULL,
 	author_id int NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE online_library.book_author
 	CONSTRAINT pk_book_author PRIMARY KEY (book_id, author_id)
 );
 
-CREATE TABLE online_library.author
+CREATE TABLE online_library_tables.author
 (
 	author_id serial PRIMARY KEY,
 	first_name varchar(64) NOT NULL,
@@ -111,24 +111,24 @@ CREATE TABLE online_library.author
 --
 
 
-ALTER TABLE online_library.saving
-ADD CONSTRAINT fk_saving_reader FOREIGN KEY (reader_id) REFERENCES online_library.reader (reader_id)
+ALTER TABLE online_library_tables.saving
+ADD CONSTRAINT fk_saving_reader FOREIGN KEY (reader_id) REFERENCES online_library_tables.reader (reader_id)
 	ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE online_library.saving
-ADD CONSTRAINT fk_saving_book FOREIGN KEY (book_id) REFERENCES online_library.book (book_id)
+ALTER TABLE online_library_tables.saving
+ADD CONSTRAINT fk_saving_book FOREIGN KEY (book_id) REFERENCES online_library_tables.book (book_id)
 	ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE online_library.book
-ADD CONSTRAINT fk_book_publisher FOREIGN KEY (publisher_id) REFERENCES online_library.publisher (publisher_id)
+ALTER TABLE online_library_tables.book
+ADD CONSTRAINT fk_book_publisher FOREIGN KEY (publisher_id) REFERENCES online_library_tables.publisher (publisher_id)
 	ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE online_library.book_author
-ADD CONSTRAINT fk_book_author_book FOREIGN KEY (book_id) REFERENCES online_library.book (book_id)
+ALTER TABLE online_library_tables.book_author
+ADD CONSTRAINT fk_book_author_book FOREIGN KEY (book_id) REFERENCES online_library_tables.book (book_id)
 	ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE online_library.book_author
-ADD CONSTRAINT fk_book_author_author FOREIGN KEY (author_id) REFERENCES online_library.author (author_id)
+ALTER TABLE online_library_tables.book_author
+ADD CONSTRAINT fk_book_author_author FOREIGN KEY (author_id) REFERENCES online_library_tables.author (author_id)
 	ON UPDATE CASCADE ON DELETE CASCADE;
 
 
@@ -137,10 +137,10 @@ ADD CONSTRAINT fk_book_author_author FOREIGN KEY (author_id) REFERENCES online_l
 ---
 
 
-ALTER TABLE online_library.saving
+ALTER TABLE online_library_tables.saving
 ADD CONSTRAINT unq_saving_reader_id_book_id UNIQUE (reader_id, book_id);
 
-ALTER TABLE online_library.publisher
+ALTER TABLE online_library_tables.publisher
 ADD CONSTRAINT unq_publisher_city_address UNIQUE (city, address);
 
 
@@ -149,6 +149,6 @@ ADD CONSTRAINT unq_publisher_city_address UNIQUE (city, address);
 ---
 
 
-CREATE INDEX idx_book_genre_lower ON online_library.book( LOWER (genre) );
-CREATE INDEX idx_author_last_name_lower ON online_library.author ( LOWER (last_name) );
-CREATE INDEX idx_publisher_city_lower ON online_library.publisher ( LOWER (city) );
+CREATE INDEX idx_book_genre_lower ON online_library_tables.book( LOWER (genre) );
+CREATE INDEX idx_author_last_name_lower ON online_library_tables.author ( LOWER (last_name) );
+CREATE INDEX idx_publisher_city_lower ON online_library_tables.publisher ( LOWER (city) );

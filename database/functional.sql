@@ -2,10 +2,10 @@
 --- ОЧИСТКА ТРИГГЕРОВ
 ---
 
-DROP TRIGGER IF EXISTS trg_set_saving_date ON online_library.saving;
-DROP TRIGGER IF EXISTS trg_update_book_rating ON online_library.saving;
-DROP TRIGGER IF EXISTS trg_update_author_rating ON online_library.book;
-DROP TRIGGER IF EXISTS trg_delete_books_after_author_delete ON online_library.author;
+DROP TRIGGER IF EXISTS trg_set_saving_date ON online_library_tables.saving;
+DROP TRIGGER IF EXISTS trg_update_book_rating ON online_library_tables.saving;
+DROP TRIGGER IF EXISTS trg_update_author_rating ON online_library_tables.book;
+DROP TRIGGER IF EXISTS trg_delete_books_after_author_delete ON online_library_tables.author;
 
 ---
 --- ОЧИСТКА ФУНКЦИЙ
@@ -61,16 +61,16 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_set_saving_date BEFORE INSERT ON online_library.saving
+CREATE TRIGGER trg_set_saving_date BEFORE INSERT ON online_library_tables.saving
 	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.track_saving_data();
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.update_book_rating() RETURNS TRIGGER AS $$
 BEGIN
-	UPDATE online_library.book
+	UPDATE online_library_tables.book
 	SET rating = (
 		SELECT AVG (rating)::numeric(4, 2)
-		FROM online_library.saving
+		FROM online_library_tables.saving
 		WHERE book_id = NEW.book_id
 	)
 	WHERE book_id = NEW.book_id;
@@ -79,7 +79,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_book_rating AFTER UPDATE OR DELETE ON online_library.saving
+CREATE TRIGGER trg_update_book_rating AFTER UPDATE OR DELETE ON online_library_tables.saving
 	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_book_rating();
 
 
@@ -88,20 +88,20 @@ DECLARE
 	searched_author_id int;
 BEGIN
 	-- Находим нужного автора через таблицы book и book_author
-	SELECT online_library.book_author.author_id
+	SELECT online_library_tables.book_author.author_id
 	INTO searched_author_id
-	FROM online_library.book
-		INNER JOIN online_library.book_author USING (book_id)
-	WHERE online_library.book.book_id = NEW.book_id
+	FROM online_library_tables.book
+		INNER JOIN online_library_tables.book_author USING (book_id)
+	WHERE online_library_tables.book.book_id = NEW.book_id
 	LIMIT 1;
 
 	-- Обновляем рейтинг автора
-	UPDATE online_library.author
+	UPDATE online_library_tables.author
 	SET rating = (
-		SELECT AVG (online_library.book.rating)::numeric(4, 2)
-		FROM online_library.book
-			INNER JOIN online_library.book_author USING (book_id)
-		WHERE online_library.book_author.author_id = searched_author_id
+		SELECT AVG (online_library_tables.book.rating)::numeric(4, 2)
+		FROM online_library_tables.book
+			INNER JOIN online_library_tables.book_author USING (book_id)
+		WHERE online_library_tables.book_author.author_id = searched_author_id
 	)
 	WHERE author_id = searched_author_id;
 	
@@ -109,23 +109,23 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_author_rating AFTER UPDATE OR DELETE ON online_library.book
+CREATE TRIGGER trg_update_author_rating AFTER UPDATE OR DELETE ON online_library_tables.book
 	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_author_rating();
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.delete_books_after_author_delete() RETURNS TRIGGER AS $$
 BEGIN
-   DELETE FROM online_library.book
+   DELETE FROM online_library_tables.book
    WHERE book_id IN (
       SELECT book_id
-      FROM online_library.book_author
+      FROM online_library_tables.book_author
       WHERE author_id = OLD.author_id
    );
    RETURN OLD;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_delete_books_after_author_delete BEFORE DELETE ON online_library.author
+CREATE TRIGGER trg_delete_books_after_author_delete BEFORE DELETE ON online_library_tables.author
 	FOR EACH ROW EXECUTE FUNCTION online_library_functional.delete_books_after_author_delete();
 
 
@@ -143,10 +143,10 @@ BEGIN
     FOR table_record IN (
         SELECT information_schema.tables.table_name
         FROM information_schema.tables
-        WHERE table_schema = 'online_library' AND table_type = 'BASE TABLE'
+        WHERE table_schema = 'online_library_tables' AND table_type = 'BASE TABLE'
 	)
     LOOP
-        select_query = format('SELECT ''%s'' AS table_name, row_to_json(t)::jsonb FROM online_library.%I t',
+        select_query = format('SELECT ''%s'' AS table_name, row_to_json(t)::jsonb FROM online_library_tables.%I t',
 						table_record.table_name,
 						table_record.table_name);
         RETURN QUERY EXECUTE select_query;
@@ -163,7 +163,7 @@ $$ LANGUAGE plpgsql;
 -- Очищение таблицы по ее имени
 CREATE OR REPLACE FUNCTION online_library_functional.truncate_table_by_name(table_name text) RETURNS VOID AS $$
 BEGIN
-	EXECUTE format('TRUNCATE TABLE online_library.%I RESTART IDENTITY CASCADE', table_name);
+	EXECUTE format('TRUNCATE TABLE online_library_tables.%I RESTART IDENTITY CASCADE', table_name);
 END
 $$ LANGUAGE plpgsql;
 
@@ -176,10 +176,10 @@ BEGIN
 	FOR table_name IN (
 		SELECT information_schema.tables.table_name
 		FROM information_schema.tables
-		WHERE table_schema = 'online_library' AND table_type = 'BASE TABLE'
+		WHERE table_schema = 'online_library_tables' AND table_type = 'BASE TABLE'
 	)
 	LOOP
-		EXECUTE format('TRUNCATE TABLE online_library.%I RESTART IDENTITY CASCADE', table_name);
+		EXECUTE format('TRUNCATE TABLE online_library_tables.%I RESTART IDENTITY CASCADE', table_name);
 	END LOOP;
 END
 $$ LANGUAGE plpgsql;
@@ -199,7 +199,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_reader(
 	in_patronymic varchar(64) DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.reader (first_name, last_name, patronymic, phone, email, reader_password)
+	INSERT INTO online_library_tables.reader (first_name, last_name, patronymic, phone, email, reader_password)
 	VALUES (in_first_name, in_last_name, in_patronymic, in_phone, in_email, in_password);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении читателя: %', SQLERRM;
@@ -212,7 +212,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_saving(
 	in_book_id int
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.saving (reader_id, book_id)
+	INSERT INTO online_library_tables.saving (reader_id, book_id)
 	VALUES (in_reader_id, in_book_id);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении пользовательского сохранения: %', SQLERRM;
@@ -227,7 +227,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_book(
 	in_publication_year int
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.book (title, genre, publisher_id, publication_year)
+	INSERT INTO online_library_tables.book (title, genre, publisher_id, publication_year)
 	VALUES (in_title, in_genre, in_publisher_id, in_publication_year);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении книги: %', SQLERRM;
@@ -242,7 +242,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_publisher
 	in_email varchar(256)
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.publisher (publisher_name, city, address, email)
+	INSERT INTO online_library_tables.publisher (publisher_name, city, address, email)
 	VALUES (in_publisher_name, in_city, in_address, in_email);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении издательства: %', SQLERRM;
@@ -255,7 +255,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_book_auth
 	in_author_id int
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.book_author (book_id, author_id)
+	INSERT INTO online_library_tables.book_author (book_id, author_id)
 	VALUES (in_book_id, in_author_id);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении связи ''книга - автор'': %', SQLERRM;
@@ -269,7 +269,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_author(
 	in_patronymic varchar(64) DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
-	INSERT INTO online_library.author (first_name, last_name, patronymic)
+	INSERT INTO online_library_tables.author (first_name, last_name, patronymic)
 	VALUES (in_first_name, in_last_name, in_patronymic);
 EXCEPTION WHEN OTHERS THEN
 	RAISE EXCEPTION 'Ошибка при добавлении автора: %', SQLERRM;
@@ -285,7 +285,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION online_library_functional.update_phone_into_table_reader(in_reader_id int,
 	in_phone varchar(32)) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.reader
+	UPDATE online_library_tables.reader
 	SET phone = in_phone
 	WHERE reader_id = in_reader_id;
 EXCEPTION WHEN OTHERS THEN
@@ -297,7 +297,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION online_library_functional.update_email_into_table_reader(in_reader_id int,
 	in_email varchar(256)) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.reader
+	UPDATE online_library_tables.reader
 	SET email = in_email
 	WHERE reader_id = in_reader_id;
 EXCEPTION WHEN OTHERS THEN
@@ -313,11 +313,11 @@ DECLARE
 BEGIN
 	SELECT patronymic
 	INTO current_patronymic
-	FROM online_library.reader
+	FROM online_library_tables.reader
 	WHERE reader_id = in_reader_id;
 
 	IF current_patronymic IS NULL THEN
-		UPDATE online_library.reader
+		UPDATE online_library_tables.reader
 		SET patronymic = in_patronymic
 		WHERE reader_id = in_reader_id;
 	ELSE
@@ -336,11 +336,11 @@ DECLARE
 BEGIN
 	SELECT has_read
 	INTO current_has_read
-	FROM online_library.saving
+	FROM online_library_tables.saving
 	WHERE saving_id = in_saving_id;
 
 	IF has_read = false THEN
-		UPDATE online_library.saving
+		UPDATE online_library_tables.saving
 		SET has_read = true
 		WHERE saving_id = in_saving_id;
 	ELSE
@@ -355,7 +355,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION online_library_functional.set_rating_into_table_saving(in_saving_id int,
 	in_rating numeric(4, 2)) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.saving
+	UPDATE online_library_tables.saving
 	SET rating = in_rating
 	WHERE saving_id = in_saving_id;
 EXCEPTION WHEN OTHERS THEN
@@ -372,7 +372,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_book(
 	in_publication_year int
 ) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.book
+	UPDATE online_library_tables.book
 	SET title = in_title,
 		genre = in_genre,
 		publisher_id = in_publisher_id,
@@ -392,7 +392,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_publisher
 	in_email varchar(256)
 ) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.publisher
+	UPDATE online_library_tables.publisher
 	SET publisher_name = in_publisher_name,
 		city = in_city,
 		address = in_address,
@@ -411,7 +411,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_book_auth
 	new_author_id int
 ) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.book_author
+	UPDATE online_library_tables.book_author
 	SET book_id = new_book_id,
 		author_id = new_author_id
 	WHERE book_id = old_book_id AND author_id = old_author_id;
@@ -429,7 +429,7 @@ CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_author(
 	in_patronymic varchar(64)
 ) RETURNS VOID AS $$
 BEGIN
-	UPDATE online_library.author
+	UPDATE online_library_tables.author
 	SET first_name = in_first_name,
 		last_name = in_last_name,
 		patronymic = in_patronymic
@@ -451,7 +451,7 @@ DECLARE
 	select_query text;
 	result_row jsonb;
 BEGIN
-	select_query = format('SELECT row_to_json(t)::jsonb FROM online_library.%I t WHERE t.%I = %L', table_name, pk_column, id);
+	select_query = format('SELECT row_to_json(t)::jsonb FROM online_library_tables.%I t WHERE t.%I = %L', table_name, pk_column, id);
 	EXECUTE select_query INTO result_row;
 	
 	IF result_row IS NULL THEN
@@ -479,8 +479,8 @@ BEGIN
 
     RETURN QUERY
     SELECT *
-    FROM online_library.book
-    WHERE LOWER(online_library.book.genre) = in_genre_lower;
+    FROM online_library_tables.book
+    WHERE LOWER(online_library_tables.book.genre) = in_genre_lower;
 END
 $$ LANGUAGE plpgsql;
 
@@ -502,8 +502,8 @@ BEGIN
 
     RETURN QUERY
     SELECT *
-    FROM online_library.book
-    WHERE LOWER(online_library.book.title) = in_title_lower;
+    FROM online_library_tables.book
+    WHERE LOWER(online_library_tables.book.title) = in_title_lower;
 END
 $$ LANGUAGE plpgsql;
 
@@ -525,9 +525,9 @@ BEGIN
 
     RETURN QUERY
     SELECT b.book_id, b.title, b.genre, b.rating, b.publisher_id, b.publication_year
-    FROM online_library.book b
-    	INNER JOIN online_library.book_author ba ON b.book_id = ba.book_id
-    	INNER JOIN online_library.author a ON ba.author_id = a.author_id
+    FROM online_library_tables.book b
+    	INNER JOIN online_library_tables.book_author ba ON b.book_id = ba.book_id
+    	INNER JOIN online_library_tables.author a ON ba.author_id = a.author_id
     WHERE LOWER(a.first_name) = in_author_nsp_lower OR LOWER(a.last_name) = in_author_nsp_lower
     	OR LOWER(a.patronymic) = in_author_nsp_lower;
 END;
@@ -551,8 +551,8 @@ BEGIN
 
     RETURN QUERY
     SELECT b.book_id, b.title, b.genre, b.rating, b.publisher_id, b.publication_year
-    FROM online_library.book b
-    	INNER JOIN online_library.publisher p ON b.publisher_id = p.publisher_id
+    FROM online_library_tables.book b
+    	INNER JOIN online_library_tables.publisher p ON b.publisher_id = p.publisher_id
     WHERE LOWER(p.publisher_name) = in_publisher_name_lower;
 END;
 $$ LANGUAGE plpgsql;
@@ -574,7 +574,7 @@ BEGIN
 
     RETURN QUERY
     SELECT *
-    FROM online_library.author
+    FROM online_library_tables.author
     WHERE LOWER(first_name) = in_author_nsp_lower OR LOWER(last_name) = in_author_nsp_lower
     	OR LOWER(patronymic) = in_author_nsp_lower;
 END
@@ -597,8 +597,8 @@ BEGIN
 
     RETURN QUERY
     SELECT *
-    FROM online_library.publisher
-    WHERE LOWER(online_library.publisher.publisher_name) = in_name_lower;
+    FROM online_library_tables.publisher
+    WHERE LOWER(online_library_tables.publisher.publisher_name) = in_name_lower;
 END
 $$ LANGUAGE plpgsql;
 
@@ -619,8 +619,8 @@ BEGIN
 
     RETURN QUERY
     SELECT *
-    FROM online_library.publisher
-    WHERE LOWER(online_library.publisher.city) = in_city_lower;
+    FROM online_library_tables.publisher
+    WHERE LOWER(online_library_tables.publisher.city) = in_city_lower;
 END
 $$ LANGUAGE plpgsql;
 
@@ -642,7 +642,7 @@ BEGIN
 
     RETURN QUERY
     SELECT r.first_name, r.last_name, r.patronymic, r.phone, r.email
-    FROM online_library.reader r
+    FROM online_library_tables.reader r
     WHERE LOWER(first_name) = in_reader_nsp_lower OR LOWER(last_name) = in_reader_nsp_lower
     	OR LOWER(patronymic) = in_reader_nsp_lower;
 END
@@ -660,7 +660,7 @@ RETURNS VOID AS $$
 DECLARE
 	delete_query text;
 BEGIN
-	delete_query = format('DELETE FROM online_library.%I WHERE %I = %L', table_name, pk_column, id);
+	delete_query = format('DELETE FROM online_library_tables.%I WHERE %I = %L', table_name, pk_column, id);
 
 	EXECUTE delete_query;
 
@@ -678,7 +678,7 @@ DECLARE
 BEGIN
 	in_author_nsp_lower = LOWER(in_author_nsp);
 
-    DELETE FROM online_library.author
+    DELETE FROM online_library_tables.author
     WHERE LOWER(first_name) = in_author_nsp_lower OR LOWER(last_name) = in_author_nsp_lower
     	OR LOWER(patronymic) = in_author_nsp_lower;
 
@@ -696,7 +696,7 @@ DECLARE
 BEGIN
 	in_name_lower = LOWER(in_name);
 
-    DELETE FROM online_library.publisher
+    DELETE FROM online_library_tables.publisher
     WHERE LOWER(publisher_name) = in_name_lower; 
 
 EXCEPTION WHEN OTHERS THEN
@@ -713,7 +713,7 @@ DECLARE
 BEGIN
 	in_reader_nsp_lower = LOWER(in_reader_nsp);
 
-    DELETE FROM online_library.reader
+    DELETE FROM online_library_tables.reader
         WHERE LOWER(first_name) = in_reader_nsp_lower OR LOWER(last_name) = in_reader_nsp_lower
     	OR LOWER(patronymic) = in_reader_nsp_lower;
 
