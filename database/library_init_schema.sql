@@ -1,14 +1,37 @@
-DROP FUNCTION IF EXISTS online_library_init.initialize_database;
-DROP FUNCTION IF EXISTS online_library_init.drop_database;
+---
+--- СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ БАЗЫ ДАННЫХ
+---
 
-DROP SCHEMA IF EXISTS online_library_init;
+CREATE USER reader_user WITH PASSWORD 'reader1000';
+
+-- даем разрешение на подключение к базе данных
+GRANT CONNECT ON DATABASE library TO reader_user;
+
+-- даем разрешение на использование схем
+GRANT USAGE ON SCHEMA online_library_tables TO reader_user;
+GRANT USAGE ON SCHEMA online_library_functional TO reader_user;
+
+-- даем разрешение на возможность делать SELECT запросы ко всем таблицам, кроме user
+GRANT SELECT ON ALL TABLES IN SCHEMA online_library_tables TO reader_user;
+REVOKE SELECT ON TABLE online_library_tables.user FROM reader_user;
+
+-- даем разрешение на вставку для таблицы saving (для сохранения книг к себе "на полку")
+GRANT INSERT ON TABLE online_library_tables.saving TO reader_user;
+
+---
+--- СОЗДАНИЕ СХЕМЫ
+---
 
 CREATE SCHEMA online_library_init AUTHORIZATION library_owner;
+
+---
+--- СОЗДАНИЕ ФУНКЦИЙ ДЛЯ ИНИЦИАЛИЗАЦИИ И УДАЛЕНИЯ БАЗЫ ДАННЫХ (СХЕМЫ)
+---
 
 CREATE OR REPLACE FUNCTION online_library_init.initialize_database() RETURNS VOID AS $$
 BEGIN
 	---
-	--- СОЗДАНИЕ СХЕМ
+	--- СОЗДАНИЕ СХЕМЫ
 	---
 
 
@@ -186,7 +209,3 @@ BEGIN
 	DROP SCHEMA IF EXISTS online_library_tables;
 END
 $$ LANGUAGE plpgsql;
-
-SELECT online_library_init.drop_database();
-SELECT online_library_init.initialize_database();
-
