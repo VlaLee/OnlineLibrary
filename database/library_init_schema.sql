@@ -15,8 +15,8 @@ GRANT USAGE ON SCHEMA online_library_functional TO reader_user;
 GRANT SELECT ON ALL TABLES IN SCHEMA online_library_tables TO reader_user;
 REVOKE SELECT ON TABLE online_library_tables.user FROM reader_user;
 
--- даем разрешение на вставку для таблицы saving (для сохранения книг к себе "на полку")
-GRANT INSERT ON TABLE online_library_tables.saving TO reader_user;
+-- даем разрешение на вставку и удаление для таблицы saving (для сохранения книг к себе "на полку")
+GRANT INSERT, DELETE ON TABLE online_library_tables.saving TO reader_user;
 
 ---
 --- СОЗДАНИЕ СХЕМЫ
