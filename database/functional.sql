@@ -294,29 +294,6 @@ END
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION online_library_functional.set_has_read_into_table_saving(in_saving_id int)
-RETURNS VOID AS $$
-DECLARE
-	current_has_read boolean;
-BEGIN
-	SELECT has_read
-	INTO current_has_read
-	FROM online_library_tables.saving
-	WHERE saving_id = in_saving_id;
-
-	IF has_read = false THEN
-		UPDATE online_library_tables.saving
-		SET has_read = true
-		WHERE saving_id = in_saving_id;
-	ELSE
-		RAISE EXCEPTION 'Ошибка [saving_id = %]: пользователь уже прочитал эту книгу', in_saving_id;
-	END IF;
-EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка [saving_id = %] при попытке пользователем прочитать книгу: %', in_saving_id, SQLERRM;
-END
-$$ LANGUAGE plpgsql;
-
-
 CREATE OR REPLACE FUNCTION online_library_functional.set_rating_into_table_saving(in_saving_id int,
 	in_rating numeric(4, 2)) RETURNS VOID AS $$
 BEGIN

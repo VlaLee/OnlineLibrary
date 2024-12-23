@@ -35,7 +35,6 @@ CREATE TABLE online_library_tables.saving
 	saving_date date NOT NULL,
 	user_id int NOT NULL,
 	book_id int NOT NULL,
-	has_read boolean DEFAULT false,
 	rating numeric(4, 2) DEFAULT NULL
 );
 
