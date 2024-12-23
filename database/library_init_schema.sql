@@ -11,6 +11,7 @@ BEGIN
 	--- СОЗДАНИЕ СХЕМ
 	---
 
+
 	CREATE SCHEMA online_library_tables AUTHORIZATION library_owner;
 
 

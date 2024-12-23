@@ -83,6 +83,7 @@ CREATE TRIGGER trg_delete_books_after_author_delete BEFORE DELETE ON online_libr
 ---
 
 
+-- получить все данные из всех таблиц в формате json
 CREATE OR REPLACE FUNCTION online_library_functional.get_all_data_from_tables()
 RETURNS TABLE(table_name text, row_data jsonb) AS $$
 DECLARE
@@ -104,7 +105,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- получение всех данных по названию таблицы
+-- получение всех данных по названию таблицы в формате json
 CREATE OR REPLACE FUNCTION online_library_functional.get_all_data_from_table_by_table_name(table_name text)
 RETURNS jsonb AS $$
 DECLARE
@@ -124,7 +125,7 @@ $$ LANGUAGE plpgsql;
 ---
 
 
--- Очищение таблицы по ее имени
+-- очищение таблицы по ее имени
 CREATE OR REPLACE FUNCTION online_library_functional.truncate_table_by_name(table_name text) RETURNS VOID AS $$
 BEGIN
 	EXECUTE format('TRUNCATE TABLE online_library_tables.%I RESTART IDENTITY CASCADE', table_name);
@@ -132,7 +133,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
--- Очищение всех таблиц
+-- очищение всех таблиц
 CREATE OR REPLACE FUNCTION online_library_functional.truncate_all_tables() RETURNS VOID AS $$
 DECLARE
 	table_name text;
@@ -154,6 +155,7 @@ $$ LANGUAGE plpgsql;
 ---
 
 
+-- добавление в таблицу user
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_user(
 	in_first_name varchar(256),
 	in_last_name varchar(256),
@@ -172,6 +174,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- добавление в таблицу saving
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_saving(
 	in_user_id int,
 	in_book_id int
@@ -185,6 +188,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- добавление в таблицу book
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_book(
 	in_title varchar(256),
 	in_genre varchar(64),
@@ -200,6 +204,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- добавление в таблицу publisher
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_publisher(
 	in_publisher_name varchar(64),
 	in_city varchar(64),
@@ -215,6 +220,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- добавление в таблицу book_author 
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_book_author(
 	in_book_id int,
 	in_author_id int
@@ -228,6 +234,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- добавление в таблицу author
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_author(
 	in_first_name varchar(64),
 	in_last_name varchar(64),
@@ -247,6 +254,7 @@ $$ LANGUAGE plpgsql;
 ---
 
 
+-- обновление телефона в таблице user по user_id
 CREATE OR REPLACE FUNCTION online_library_functional.update_phone_into_table_user(in_user_id int,
 	in_phone varchar(256)) RETURNS VOID AS $$
 BEGIN
@@ -259,6 +267,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- обновление электронной почты в таблице user по user_id
 CREATE OR REPLACE FUNCTION online_library_functional.update_email_into_table_user(in_user_id int,
 	in_email varchar(256)) RETURNS VOID AS $$
 BEGIN
@@ -271,6 +280,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- установление отчества (если его не было при регистрации) в таблице user по user_id
 CREATE OR REPLACE FUNCTION online_library_functional.set_patronymic_into_table_user(in_user_id int,
 	in_patronymic varchar(256)) RETURNS VOID AS $$
 DECLARE
@@ -294,6 +304,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- установление рейтинга книге пользователем по saving_id
 CREATE OR REPLACE FUNCTION online_library_functional.set_rating_into_table_saving(in_saving_id int,
 	in_rating numeric(4, 2)) RETURNS VOID AS $$
 BEGIN
@@ -306,6 +317,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- обновление книги в таблице book
 CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_book(
 	in_book_id int,
 	in_title varchar(256),
@@ -326,6 +338,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- обновление издательства в таблице publisher
 CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_publisher(
 	in_publisher_id int,
 	in_publisher_name varchar(64),
@@ -346,6 +359,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- обновление в таблице book_author
 CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_book_author(
 	old_book_id int,
 	old_author_id int,
@@ -364,6 +378,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- обновление автора в таблице author
 CREATE OR REPLACE FUNCTION online_library_functional.update_into_table_author(
 	in_author_id int,
 	in_first_name varchar(64),
@@ -387,7 +402,7 @@ $$ LANGUAGE plpgsql;
 ---
 
 
--- поиск по первичному ключу
+-- поиск по имени таблицы, названию первичного ключа этой таблицы и первичному ключу
 CREATE OR REPLACE FUNCTION online_library_functional.find_row_by_id(table_name text, pk_column text, id int)
 RETURNS jsonb AS $$
 DECLARE
@@ -605,12 +620,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- поиск статуса is_admin по логину и паролю пользователя
-CREATE OR REPLACE FUNCTION online_library_functional.get_is_admin_by_user_email_and_password(in_email varchar(256),
+-- поиск user_id и статуса is_admin по логину и паролю пользователя
+CREATE OR REPLACE FUNCTION online_library_functional.get_user_id_and_is_admin_by_user_email_and_password(in_email varchar(256),
 in_password varchar(256)) RETURNS jsonb AS $$
 BEGIN
     RETURN (
         SELECT jsonb_agg(jsonb_build_object(
+			'user_id', user_id,
 			'is_admin', is_admin
         ))
         FROM online_library_tables.user u
@@ -625,7 +641,7 @@ $$ LANGUAGE plpgsql;
 ---
 
 
--- удаление по первичному ключу
+-- удаление по имени таблицы, названию первичного ключа в этой таблице и первичному ключу
 CREATE OR REPLACE FUNCTION online_library_functional.delete_row_by_id(table_name text, pk_column text, id int)
 RETURNS VOID AS $$
 DECLARE
