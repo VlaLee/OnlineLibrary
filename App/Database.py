@@ -35,7 +35,7 @@ cipher_suite = Fernet(key)
 
 
 engine = create_engine(
-    'postgresql+psycopg2://library_owner:102255@localhost/library',
+    'postgresql+psycopg2://reader_user:reader1000@localhost/library',
     echo=False,
     isolation_level='SERIALIZABLE'
 )
@@ -233,7 +233,6 @@ def login_func_data(login : str, password : str) -> int:
         else:
             return None
     row0 += "]"
-    res = []
     for item in loads(row0):
         return item
 
@@ -325,6 +324,10 @@ def insert_into_table_saving(id: int, arg: int):
     session.execute(func.online_library_functional.insert_into_table_saving(id, arg)).all()
     session.commit()
 
+def remove_into_table_saving(id: int, arg: int):
+    # session.execute(func.online_library_functional.insert_into_table_saving(id, arg)).all()
+    session.commit()
+
 def search_all_my_books():
     data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('saving')).all()
     row0 = "["
@@ -345,3 +348,33 @@ def search_all_my_books():
         # tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['saving_id'])
         # res.append(tmp)
     return res
+
+def search_all_users():
+    data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('user')).all()
+    row0 = "["
+    for row in data:
+        if (row[0] != None):
+            for item in row[0]:
+                string_data = dumps(item)
+                if (item != row[0][0]):
+                    row0 += ', ' + string_data
+                else:
+                    row0 += string_data
+        else:
+            return None
+    row0 += "]"
+    res = []
+    for item in loads(row0):
+        tmp = (item['user_id'], item['email'], item['phone'], f'{item['last_name']} {item['first_name']} {item['patronymic']}')
+        res.append(tmp)
+    return res
+
+
+def drop_database():
+    session.execute(func.online_library_init.drop_database())
+    session.commit()
+
+
+def initialize_database():
+    session.execute(func.online_library_init.create_database())
+    session.commit()

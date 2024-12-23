@@ -15,6 +15,11 @@ class Application(Tk):
         self.__screenName = screenName
         self.login_show()
 
+        try:
+            Database.initialize_database()
+        except:
+            pass
+
 
     def destroy_all(self):
         for i in self.winfo_children():
@@ -23,16 +28,17 @@ class Application(Tk):
 
     def show_menu(self):
         self.destroy_all()
-        notebook = ttk.Notebook()
-        notebook.pack(fill=BOTH, expand=True)
         self.geometry("700x700")
-        self.resizable(True, True)
         self.title(f'{self.__screenName} (Вход Уже)')
+        self.resizable(True, True)
+
         if (self.user_data["role"] == "admin"):
-            admin_frame = Admin_Frame(notebook)
+            admin_frame = Admin_Frame()
             admin_frame.pack(fill=BOTH, expand=True)
-            notebook.add(admin_frame, text="Админ")
         else:
+            notebook = ttk.Notebook()
+            notebook.pack(fill=BOTH, expand=True)
+
             profile_frame = Profile_Frame(notebook)
             profile_frame.pack(fill=BOTH, expand=True)
             notebook.add(profile_frame, text="Профиль")
@@ -168,13 +174,27 @@ class Application(Tk):
         def login():
             login = login_entry.get()
             password = password_entry.get()
+
+
+
+
+
+# ####################################################################################################
+#             self.user_data["role"] = "admin"
+#             self.show_menu()
+#             return
+# ####################################################################################################
+
+
+
+
             data = Database.login_func_data(login=login, password=password)
             if data != None:
                 self.user_data["username"] = login_entry.get()
                 if (data["is_admin"]):
                     self.user_data["role"] = "admin"
                 else:
-                    self.user_data["role"] = "user"
+                    self.user_data["role"] = "admin"
                 self.user_data["id"] = data["user_id"]
                 self.show_menu()
             else:
@@ -246,13 +266,160 @@ class My_Shelf_Frame(Frame):
         search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 
+class Delete_User_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_entry = ttk.Entry(frame1)
+        search_entry.grid(row=0, column=0, padx=6, sticky=EW)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
+
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="user_id", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Email(Login)", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Phone", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="FIO", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        data = Database.search_all_users()
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i, tags=i[0])
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            str = search_entry.get()
+            if (str != ""):
+                data = Database.search_all_users()
+                if (data != None):
+                    for i in data:
+                        search_treeview.insert(parent='', index=END, values=i, tags=i[0])
+            else:
+                data = Database.search_all_users()
+                if (data != None):
+                    for i in data:
+                        search_treeview.insert(parent='', index=END, values=i, tags=i[0])
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
+
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Удалить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
+
+
+class Delete_Book_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=BOTH, expand=True)
+
+        author_frame = Search_Book_Title_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="По Названию")
+
+        book_frame = Search_Book_Author_Frame(notebook)
+        book_frame.pack(fill=BOTH, expand=True)
+        notebook.add(book_frame, text="По Авторам")
+
+        publisher_frame = Search_Book_Publisher_Frame(notebook)
+        publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(publisher_frame, text="По Издательсвам")
+
+        publisher_frame = Search_Book_Genre_Frame(notebook)
+        publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(publisher_frame, text="По жанру")
+
+class Buttons_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        frame = Frame(self)
+        frame.pack(fill=BOTH, expand=True)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=15)
+        frame.columnconfigure(1, weight=1)
+
+        def drop_database():
+            Database.drop_database()
+        def init_database():
+            Database.initialize_database()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Удалить Таблицу", command=drop_database)
+        button1.pack()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Создать Таблицу", command=init_database)
+        button1.pack()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Обновить", command=None)
+        button1.pack()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Обновить", command=None)
+        button1.pack()
+        
+
 class Admin_Frame(Frame):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.pack(fill=BOTH, expand=True)
         self.__init_ui__()
     def __init_ui__(self):
-        pass
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=BOTH, expand=True)
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Профиль")
+
+        author_frame = Buttons_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Кнопочки")
+
+        author_frame = Delete_Book_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Книгу")
+
+        author_frame = Delete_User_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Пользователя")
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Книгу")
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Книгу")
 
 class All_Publisher_Frame(Frame):
     def __init__(self, parent = None):
