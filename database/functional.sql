@@ -120,6 +120,31 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- получение всех данных из таблицы saving в "красивом" формате + в формате json
+CREATE OR REPLACE FUNCTION online_library_functional.get_all_data_from_table_saving()
+RETURNS jsonb AS $$
+BEGIN
+    RETURN (
+        SELECT jsonb_agg(jsonb_build_object(
+            'saving_id', s.saving_id,
+			'saving_date', s.saving_date,
+			'user_rating', s.rating,
+            'title', b.title,
+            'genre', b.genre,
+            'first_name', a.first_name,
+            'last_name', a.last_name,
+            'patronymic', a.patronymic,
+			'publisher_name', p.publisher_name
+        ))
+        FROM online_library_tables.saving s
+			INNER JOIN online_library_tables.book b USING (book_id)
+			INNER JOIN online_library_tables.book_author ba USING (book_id)
+			INNER JOIN online_library_tables.author a USING (author_id)
+			INNER JOIN online_library_tables.publisher p USING (publisher_id)
+    );
+END
+$$ LANGUAGE plpgsql;
+
 ---
 --- ФУНКЦИИ НА ОЧИЩЕНИЕ ТАБЛИЦ
 ---
