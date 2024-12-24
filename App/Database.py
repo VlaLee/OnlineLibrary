@@ -44,21 +44,7 @@ def init():
 
     return session
 
-session = init()
-
-def encrypte_string(arg : str):
-    # Шифрование данных
-    encrypted_data = cipher_suite.encrypt(arg.encode())
-
-    return encrypted_data.decode()
-
-
-def decrypte_string(arg : str):
-    # Дешифрование данных
-    decrypted_data = cipher_suite.decrypt(arg.encode())
-
-    return decrypted_data.decode()
-    
+session = init() 
 
 
 def search_authors_by_author_nsp(arg : String):
@@ -410,9 +396,22 @@ def add_book(in_title: str, in_genre: str, in_publisher_id: int, in_publication_
 def add_author(in_first_name: str, in_last_name: str, in_patronymic: str):
     session.execute(func.online_library_functional.insert_into_table_author(in_first_name, in_last_name, in_patronymic))
     session.commit()
-    session.execute(func.online_library_functional.insert_into_table_book_author())
 
 def add_publisher(in_name: str, city: str, adress: str, email: str):
     session.execute(func.online_library_functional.insert_into_table_publisher(in_name, city, adress, email))
     session.commit()
 
+def edit_publisher(id: int, title: str, city: str, adress: str, email: str):
+    session.execute(func.online_library_functional.update_into_table_publisher(id, title, city, adress, email))
+    session.commit()
+
+def edit_book(id: int, in_title: str, in_genre: str, in_publisher_id: int, in_publication_year: int, author_id: int):
+    session.execute(func.online_library_functional.update_into_table_book(id, in_title, in_genre, in_publisher_id, in_publication_year)).all()
+    session.commit()
+def edit_author(id: int, in_first_name: str, in_last_name: str, in_patronymic: str):
+    session.execute(func.online_library_functional.update_into_table_author(id, in_first_name, in_last_name, in_patronymic))
+    session.commit()
+
+def delete_user(id: int):
+    session.execute(func.online_library_functional.delete_row_by_id('user', 'user_id', id))
+    session.commit()

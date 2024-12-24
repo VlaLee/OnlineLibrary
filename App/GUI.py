@@ -317,9 +317,9 @@ class Delete_User_Frame(Frame):
         search_entry.grid(row=1, column=0, padx=6, sticky=EW)
         
         def delete_user():
-            pass
+            Database.delete_user(search_entry.get())
 
-        search_button = ttk.Button(frame1, text="Поиск", command=delete_user)
+        search_button = ttk.Button(frame1, text="Удалить", command=delete_user)
         search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 class Search_Book_Frame(Frame):
@@ -851,6 +851,7 @@ class All_Books_Frame_Admin(Frame):
         search_button = ttk.Button(frame1, text="Обновить", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
 
+
 class Add_Book_Frame(Frame):
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -894,6 +895,55 @@ class Add_Book_Frame(Frame):
         add_btn = ttk.Button(self, text="Добавить", command=add_book)
         add_btn.pack()
 
+class Edit_Book_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        id_label = Label(self, text="id")
+        id_label.pack()
+        id_entry = Entry(self)
+        id_entry.pack()
+
+        title_label = Label(self, text="Название")
+        title_label.pack()
+        title_entry = Entry(self)
+        title_entry.pack()
+
+        genre_label = Label(self, text="Жанр")
+        genre_label.pack()
+        genre_entry = Entry(self)
+        genre_entry.pack()
+
+        publisher_label = Label(self, text="id Публикации")
+        publisher_label.pack()
+        publisher_entry = Entry(self)
+        publisher_entry.pack()
+
+        Author_label = Label(self, text="id Автора")
+        Author_label.pack()
+        Author_entry = Entry(self)
+        Author_entry.pack()
+
+        publisher_year_label = Label(self, text="Год Публикации")
+        publisher_year_label.pack()
+        publisher_year_entry = Entry(self)
+        publisher_year_entry.pack()
+
+        def add_book():
+            Database.edit_book(
+                id_entry.get(),
+                title_entry.get(),
+                genre_entry.get(),
+                publisher_entry.get(),
+                publisher_year_entry.get(),
+                Author_entry.get()
+            )
+            
+        add_btn = ttk.Button(self, text="Изменить", command=add_book)
+        add_btn.pack()
+
 class Add_Author_Frame(Frame):
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -924,6 +974,44 @@ class Add_Author_Frame(Frame):
             
         add_btn = ttk.Button(self, text="Добавить", command=add_book)
         add_btn.pack()
+
+class Edit_Author_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        id_label = Label(self, text="id")
+        id_label.pack()
+        id_entry = Entry(self)
+        id_entry.pack()
+        
+        firstname_label = Label(self, text="Имя")
+        firstname_label.pack()
+        firstname_entry = Entry(self)
+        firstname_entry.pack()
+
+        lastname_label = Label(self, text="Имя")
+        lastname_label.pack()
+        lastname_entry = Entry(self)
+        lastname_entry.pack()
+
+        patronymic_label = Label(self, text="Имя")
+        patronymic_label.pack()
+        patronymic_entry = Entry(self)
+        patronymic_entry.pack()
+
+        def add_book():
+            Database.edit_author(
+                id_entry.get(),
+                firstname_entry.get(),
+                lastname_entry.get(),
+                patronymic_entry.get()
+            )
+            
+        add_btn = ttk.Button(self, text="Изменить", command=add_book)
+        add_btn.pack()
+
 
 class Add_Publisher_Frame(Frame):
     def __init__(self, parent = None):
@@ -961,6 +1049,96 @@ class Add_Publisher_Frame(Frame):
             
         add_btn = ttk.Button(self, text="Добавить", command=add_book)
         add_btn.pack()
+
+class Edit_Publisher_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        id_label = Label(self, text="id")
+        id_label.pack()
+        id_entry = Entry(self)
+        id_entry.pack()
+
+        title_label = Label(self, text="Название")
+        title_label.pack()
+        title_entry = Entry(self)
+        title_entry.pack()
+
+        city_label = Label(self, text="Город")
+        city_label.pack()
+        city_entry = Entry(self)
+        city_entry.pack()
+
+        adress_label = Label(self, text="Адрес")
+        adress_label.pack()
+        adress_entry = Entry(self)
+        adress_entry.pack()
+        
+        email_label = Label(self, text="Электронная почта")
+        email_label.pack()
+        email_entry = Entry(self)
+        email_entry.pack()
+
+        def add_book():
+            Database.edit_publisher(
+                id_entry.get(),
+                title_entry.get(),
+                city_entry.get(),
+                adress_entry.get(),
+                email_entry.get()
+            )
+            
+        add_btn = ttk.Button(self, text="Изменить", command=add_book)
+        add_btn.pack()
+
+class All_Users_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
+
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="id", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Login(Email)", command=lambda: sort(0, False))
+        search_treeview.heading("3", text="ГородНомер Телефона", command=lambda: sort(1, False))
+        search_treeview.heading("4", text="ФИО", command=lambda: sort(2, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        data = Database.search_all_users()
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i)
+
+
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            data = Database.search_all_users()
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i)
+
+
+        search_button = ttk.Button(frame1, text="Обновить", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
 
 class Admin_Frame(Frame):
     def __init__(self, parent = None):
@@ -1006,6 +1184,18 @@ class Admin_Frame(Frame):
         author_frame = Add_Publisher_Frame(notebook)
         author_frame.pack(fill=BOTH, expand=True)
         notebook.add(author_frame, text="Добавть Издательство")
+
+        author_frame = Edit_Book_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Изменить Книгу")
+        
+        author_frame = Edit_Author_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Изменить Автора")
+
+        author_frame = Edit_Publisher_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Изменить Публикацию")
         
         all_books_frame = All_Books_Frame_Admin(notebook)
         all_books_frame.pack(fill=BOTH, expand=True)
@@ -1018,6 +1208,10 @@ class Admin_Frame(Frame):
         all_publisher_frame = All_Publisher_Frame(notebook)
         all_publisher_frame.pack(fill=BOTH, expand=True)
         notebook.add(all_publisher_frame, text="Все издательства")
+
+        all_publisher_frame = All_Users_Frame(notebook)
+        all_publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(all_publisher_frame, text="Все пользователи")
 
 
 class All_Publisher_Frame(Frame):
