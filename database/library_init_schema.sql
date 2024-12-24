@@ -197,6 +197,10 @@ BEGIN
 	(5, 2),
 	(6, 3),
 	(7, 3);
+
+	INSERT INTO online_library_tables.user (first_name, last_name, patronymic, phone, email, user_password, is_admin)
+	VALUES
+	('Admin', 'Adminov', 'Adminovich', '88005553535', 'admin@inbox.com', 'adminka', true);
 END
 $$ LANGUAGE plpgsql;
 
