@@ -3,7 +3,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 from json import loads, dumps
-import re
 from cryptography.fernet import Fernet
 
 
@@ -25,27 +24,27 @@ class Book():
             'publication_year': publication_year,
             'rating': rating
         }
-    
 
-login = 'library_owner'
-password = '102255'
+def init():
+    login = 'library_owner'
+    password = '102255'
 
-key = b'4qmRF8hE7ti5lIFmsKNlMe0VgrNwsav0pi4DNMgxAsI='
-cipher_suite = Fernet(key)
+    engine = create_engine(
+        F'postgresql+psycopg2://{login}:{password}@localhost/library',
+        echo=False,
+        isolation_level='SERIALIZABLE'
+    )
 
+    Base = declarative_base()
+    metadata = MetaData()
 
-engine = create_engine(
-    'postgresql+psycopg2://reader_user:reader1000@localhost/library',
-    echo=False,
-    isolation_level='SERIALIZABLE'
-)
+    Session = sessionmaker(bind=engine)
 
-Base = declarative_base()
-metadata = MetaData()
+    session = Session()
 
-Session = sessionmaker(bind=engine)
+    return session
 
-session = Session()
+session = init()
 
 def encrypte_string(arg : str):
     # Шифрование данных
@@ -321,7 +320,7 @@ def search_all_publishers():
     return res
 
 def insert_into_table_saving(id: int, arg: int):
-    session.execute(func.online_library_functional.insert_into_table_saving(id, arg)).all()
+    session.execute(func.online_library_functional.insert_into_table_saving(id, arg))
     session.commit()
 
 def remove_into_table_saving(id: int, arg: int):
@@ -329,7 +328,7 @@ def remove_into_table_saving(id: int, arg: int):
     session.commit()
 
 def search_all_my_books():
-    data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('saving')).all()
+    data = session.execute(func.online_library_functional.get_all_data_from_table_saving()).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -344,9 +343,8 @@ def search_all_my_books():
     row0 += "]"
     res = []
     for item in loads(row0):
-        print(item)
-        # tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['saving_id'])
-        # res.append(tmp)
+        tmp = (item['title'], item['genre'], item['user_rating'], item['saving_date'], item['saving_id'])
+        res.append(tmp)
     return res
 
 def search_all_users():
@@ -369,6 +367,10 @@ def search_all_users():
         res.append(tmp)
     return res
 
+def remove_book(id: int):
+    session.execute(func.online_library_functional.delete_row_by_id('saving', 'saving_id', id))
+    session.commit()
+
 
 def drop_database():
     session.execute(func.online_library_init.drop_database())
@@ -376,5 +378,11 @@ def drop_database():
 
 
 def initialize_database():
-    session.execute(func.online_library_init.create_database())
+    session.execute(func.online_library_init.initialize_database())
     session.commit()
+    session.close()
+    session = init()
+
+
+def rate_book(id: int, rate: int):
+    session.execute(func.online_library_functional.set_rating_into_table_saving(id, rate))
