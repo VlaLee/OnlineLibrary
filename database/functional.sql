@@ -206,16 +206,21 @@ $$ LANGUAGE plpgsql;
 
 -- добавление в таблицу book
 CREATE OR REPLACE FUNCTION online_library_functional.insert_into_table_book(
-	in_title varchar(256),
-	in_genre varchar(64),
-	in_publisher_id int,
-	in_publication_year int
-) RETURNS VOID AS $$
+  in_title varchar(256),
+  in_genre varchar(64),
+  in_publisher_id int,
+  in_publication_year int
+) RETURNS int AS $$
+DECLARE
+  new_book_id int;
 BEGIN
-	INSERT INTO online_library_tables.book (title, genre, publisher_id, publication_year)
-	VALUES (in_title, in_genre, in_publisher_id, in_publication_year);
+  INSERT INTO online_library_tables.book (title, genre, publisher_id, publication_year)
+  VALUES (in_title, in_genre, in_publisher_id, in_publication_year)
+  RETURNING book_id INTO new_book_id;
+
+  RETURN new_book_id;
 EXCEPTION WHEN OTHERS THEN
-	RAISE EXCEPTION 'Ошибка при добавлении книги: %', SQLERRM;
+  RAISE EXCEPTION 'Ошибка при добавлении книги: %', SQLERRM;
 END
 $$ LANGUAGE plpgsql;
 
