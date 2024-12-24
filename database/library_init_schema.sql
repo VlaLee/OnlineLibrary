@@ -150,6 +150,20 @@ BEGIN
 
 
 	---
+	--- СОЗДАНИЕ ТРИГГЕРОВ
+	---
+
+	CREATE TRIGGER trg_set_saving_date BEFORE INSERT ON online_library_tables.saving
+	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.track_saving_data();
+
+	CREATE TRIGGER trg_update_book_rating AFTER UPDATE OR DELETE ON online_library_tables.saving
+	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_book_rating();
+
+	CREATE TRIGGER trg_update_author_rating AFTER UPDATE OR DELETE ON online_library_tables.book
+	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_author_rating();
+
+
+	---
 	--- ВСТАВКА ТЕСТОВЫХ ДАННЫХ
 	---
 

@@ -1,5 +1,5 @@
 ---
---- СОЗДАНИЕ ТРИГГЕР-ФУНКЦИЙ И ТРИГГЕРОВ
+--- СОЗДАНИЕ ТРИГГЕР-ФУНКЦИЙ
 ---
 
 
@@ -9,9 +9,6 @@ BEGIN
 	RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_set_saving_date BEFORE INSERT ON online_library_tables.saving
-	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.track_saving_data();
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.update_book_rating() RETURNS TRIGGER AS $$
@@ -27,9 +24,6 @@ BEGIN
 	RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_book_rating AFTER UPDATE OR DELETE ON online_library_tables.saving
-	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_book_rating();
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.update_author_rating() RETURNS TRIGGER AS $$
@@ -57,9 +51,6 @@ BEGIN
 	RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_author_rating AFTER UPDATE OR DELETE ON online_library_tables.book
-	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_author_rating();
 
 
 CREATE OR REPLACE FUNCTION online_library_functional.delete_books_after_author_delete() RETURNS TRIGGER AS $$
