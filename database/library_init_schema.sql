@@ -142,9 +142,9 @@ BEGIN
 	---
 	--- СОЗДАНИЕ ИНДЕКСОВ
 	---
-	
 
-	CREATE INDEX idx_user_email ON online_library_tables.user(email);
+	
+	CREATE INDEX idx_user_email_password ON online_library_tables.user(email, user_password);
 	CREATE INDEX idx_book_genre_lower ON online_library_tables.book( LOWER (genre) );
 	CREATE INDEX idx_author_last_name_lower ON online_library_tables.author( LOWER (last_name) );
 
