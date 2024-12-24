@@ -15,6 +15,11 @@ class Application(Tk):
         self.__screenName = screenName
         self.login_show()
 
+        try:
+            Database.initialize_database()
+        except:
+            pass
+
 
     def destroy_all(self):
         for i in self.winfo_children():
@@ -23,19 +28,20 @@ class Application(Tk):
 
     def show_menu(self):
         self.destroy_all()
-        notebook = ttk.Notebook()
-        notebook.pack(fill=BOTH, expand=True)
         self.geometry("700x700")
-        self.resizable(True, True)
         self.title(f'{self.__screenName} (Вход Уже)')
-        if (self.user_data["role"] == "user"):
-            admin_frame = Admin_Frame(notebook)
+        self.resizable(True, True)
+
+        if (self.user_data["role"] == "admin"):
+            admin_frame = Admin_Frame()
             admin_frame.pack(fill=BOTH, expand=True)
-            notebook.add(admin_frame, text="Админ")
         else:
-            my_shelf_frame = My_Shelf_Frame(notebook)
-            my_shelf_frame.pack(fill=BOTH, expand=True)
-            notebook.add(my_shelf_frame, text="Моя полка")
+            notebook = ttk.Notebook()
+            notebook.pack(fill=BOTH, expand=True)
+
+            profile_frame = Profile_Frame(notebook)
+            profile_frame.pack(fill=BOTH, expand=True)
+            notebook.add(profile_frame, text="Профиль")
 
             all_books_frame = All_Books_Frame(notebook)
             all_books_frame.pack(fill=BOTH, expand=True)
@@ -53,11 +59,7 @@ class Application(Tk):
             search_frame.pack(fill=BOTH, expand=True)
             notebook.add(search_frame, text="Поиск")
             
-            profile_frame = Profile_Frame(notebook)
-            notebook.add(profile_frame, text="Профиль")
-        
-            
-     
+
 
     def registration_show(self):
         self.title(f'{self.__screenName} (Регистрация)')
@@ -139,7 +141,11 @@ class Application(Tk):
             elif (password != check_password):
                 error_label.config(text="Пароли не совпадают")
             else:
-                self.registration_func_off()
+                try:
+                    Database.register_func_data(firstname, lastname, phone_number, login, password, False, patronymic)
+                    self.registration_func_off()
+                except:
+                    error_label.config(text="Такой пользователь уже существует")
 
         registration_button_off = ttk.Button(text="Зарегистрироваться", command=registration_func)
         registration_button_off.pack(anchor=CENTER, padx=6, pady=6)
@@ -166,13 +172,33 @@ class Application(Tk):
         error_label.pack()
 
         def login():
-            self.user_data["username"] = login_entry.get()
-            self.user_data["role"] = "admin"
-            self.show_menu()
-            # if (password_entry.get() == "12345678"):
-                
-            # else:
-            #     error_label.config(text="Неверный логин/пароль")
+            login = login_entry.get()
+            password = password_entry.get()
+
+
+
+
+
+# ####################################################################################################
+#             self.user_data["role"] = "admin"
+#             self.show_menu()
+#             return
+# ####################################################################################################
+
+
+
+
+            data = Database.login_func_data(login=login, password=password)
+            if data != None:
+                self.user_data["username"] = login_entry.get()
+                if (data["is_admin"]):
+                    self.user_data["role"] = "admin"
+                else:
+                    self.user_data["role"] = "admin"
+                self.user_data["id"] = data["user_id"]
+                self.show_menu()
+            else:
+                error_label.config(text="Неверный логин/пароль")
 
         login_button = ttk.Button(text="Войти", command=login)
         login_button.pack(anchor=CENTER, padx=6, pady=6)
@@ -196,8 +222,171 @@ class My_Shelf_Frame(Frame):
         self.pack(fill=BOTH, expand=True)
         self.__init_ui__()
     def __init_ui__(self):
-        pass
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="Название", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Жанр", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Год Публикации", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Рейтинг", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        data = Database.search_all_my_books()
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            data = Database.search_all_my_books()
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
+        def remove_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
+
+        search_button = ttk.Button(frame1, text="Обновить", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Убрать", command=remove_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
+
+
+class Delete_User_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_entry = ttk.Entry(frame1)
+        search_entry.grid(row=0, column=0, padx=6, sticky=EW)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
+
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="user_id", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Email(Login)", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Phone", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="FIO", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        data = Database.search_all_users()
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i, tags=i[0])
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            str = search_entry.get()
+            if (str != ""):
+                data = Database.search_all_users()
+                if (data != None):
+                    for i in data:
+                        search_treeview.insert(parent='', index=END, values=i, tags=i[0])
+            else:
+                data = Database.search_all_users()
+                if (data != None):
+                    for i in data:
+                        search_treeview.insert(parent='', index=END, values=i, tags=i[0])
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
+
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Удалить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
+
+
+class Delete_Book_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=BOTH, expand=True)
+
+        author_frame = Search_Book_Title_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="По Названию")
+
+        book_frame = Search_Book_Author_Frame(notebook)
+        book_frame.pack(fill=BOTH, expand=True)
+        notebook.add(book_frame, text="По Авторам")
+
+        publisher_frame = Search_Book_Publisher_Frame(notebook)
+        publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(publisher_frame, text="По Издательсвам")
+
+        publisher_frame = Search_Book_Genre_Frame(notebook)
+        publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(publisher_frame, text="По жанру")
+
+class Buttons_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        frame = Frame(self)
+        frame.pack(fill=BOTH, expand=True)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=15)
+        frame.columnconfigure(1, weight=1)
+
+        def drop_database():
+            Database.drop_database()
+        def init_database():
+            Database.initialize_database()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Удалить Таблицу", command=drop_database)
+        button1.pack()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Создать Таблицу", command=init_database)
+        button1.pack()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Обновить", command=None)
+        button1.pack()
+
+        label = Label(frame, text="Кнопочки")
+        label.pack()
+        button1 = ttk.Button(frame, text="Обновить", command=None)
+        button1.pack()
+        
 
 class Admin_Frame(Frame):
     def __init__(self, parent = None):
@@ -205,7 +394,32 @@ class Admin_Frame(Frame):
         self.pack(fill=BOTH, expand=True)
         self.__init_ui__()
     def __init_ui__(self):
-        pass
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=BOTH, expand=True)
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Профиль")
+
+        author_frame = Buttons_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Кнопочки")
+
+        author_frame = Delete_Book_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Книгу")
+
+        author_frame = Delete_User_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Пользователя")
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Книгу")
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Удалить Книгу")
 
 class All_Publisher_Frame(Frame):
     def __init__(self, parent = None):
@@ -213,7 +427,55 @@ class All_Publisher_Frame(Frame):
         self.pack(fill=BOTH, expand=True)
         self.__init_ui__()
     def __init_ui__(self):
-        pass
+        data = Database.search_all_publishers()
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
+
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="Название", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Город", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Электронная Почта", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Адрес", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i)
+
+
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            data = Database.search_all_publishers()
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i)
+
+
+        search_button = ttk.Button(frame1, text="Обновить", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
+
+class Me_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        exit_button = ttk.Button(self, text="Выход", command=root.login_show)
+        exit_button.pack()
 
 
 class Profile_Frame(Frame):
@@ -223,8 +485,16 @@ class Profile_Frame(Frame):
         self.__init_ui__()
     
     def __init_ui__(self):
-        exit_button = ttk.Button(self, text="Выход", command=root.login_show)
-        exit_button.pack()
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=BOTH, expand=True)
+
+        author_frame = Me_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="        Я        ")
+
+        author_frame = My_Shelf_Frame(notebook)
+        author_frame.pack(fill=BOTH, expand=True)
+        notebook.add(author_frame, text="Моя Полка")
 
 
 
@@ -234,7 +504,50 @@ class All_Books_Frame(Frame):
         self.pack(fill=BOTH, expand=True)
         self.__init_ui__()
     def __init_ui__(self):
-        pass
+        data = Database.search_all_books()
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
+
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="Название", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Жанр", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Год Публикации", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Рейтинг", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
+                
+
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())["tags"][0]
+            Database.insert_into_table_saving(root.user_data["id"], item)
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            data = Database.search_all_books()
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
+
+        search_button = ttk.Button(frame1, text="Обновить", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Добавить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 class All_Authors_Frame(Frame):
     def __init__(self, parent = None):
@@ -242,8 +555,44 @@ class All_Authors_Frame(Frame):
         self.pack(fill=BOTH, expand=True)
         self.__init_ui__()
     def __init_ui__(self):
-        pass
+        data = Database.search_all_authors()
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="Имя", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Фамилия", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Отчество", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Рейтинг", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+        if (data != None):
+            for i in data:
+                search_treeview.insert(parent='', index=END, values=i)
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            data = Database.search_all_authors()
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i)
+
+
+        search_button = ttk.Button(frame1, text="Обновить", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
 
 
 class Search_Book_Author_Frame(Frame):
@@ -261,7 +610,7 @@ class Search_Book_Author_Frame(Frame):
         frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
         search_entry = ttk.Entry(frame1)
         search_entry.grid(row=0, column=0, padx=6, sticky=EW)
-        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
         def sort(col, reverse):
             l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
@@ -286,13 +635,15 @@ class Search_Book_Author_Frame(Frame):
 
             if (data != None):
                 for i in data:
-                    search_treeview.insert(parent='', index=END, values=i)
+                    search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
 
-        def search_func():
-            add_data()
-
-        search_button = ttk.Button(frame1, text="Поиск", command=search_func)
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Добавить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 class Search_Book_Publisher_Frame(Frame):
     def __init__(self, parent = None):
@@ -309,7 +660,7 @@ class Search_Book_Publisher_Frame(Frame):
         frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
         search_entry = ttk.Entry(frame1)
         search_entry.grid(row=0, column=0, padx=6, sticky=EW)
-        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
         def sort(col, reverse):
             l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
@@ -334,13 +685,16 @@ class Search_Book_Publisher_Frame(Frame):
 
             if (data != None):
                 for i in data:
-                    search_treeview.insert(parent='', index=END, values=i)
+                    search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
 
-        def search_func():
-            add_data()
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
 
-        search_button = ttk.Button(frame1, text="Поиск", command=search_func)
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Добавить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 
 class Search_Book_Title_Frame(Frame):
@@ -358,7 +712,7 @@ class Search_Book_Title_Frame(Frame):
         frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
         search_entry = ttk.Entry(frame1)
         search_entry.grid(row=0, column=0, padx=6, sticky=EW)
-        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
         def sort(col, reverse):
             l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
@@ -376,7 +730,6 @@ class Search_Book_Title_Frame(Frame):
         search_treeview.pack(fill=BOTH, expand=True)
 
         def add_data():
-            print(search_entry.get())
             for item in search_treeview.get_children():
                 search_treeview.delete(item)
             str = search_entry.get()
@@ -384,13 +737,16 @@ class Search_Book_Title_Frame(Frame):
 
             if (data != None):
                 for i in data:
-                    search_treeview.insert(parent='', index=END, values=i)
+                    search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
 
-        def search_func():
-            add_data()
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
 
-        search_button = ttk.Button(frame1, text="Поиск", command=search_func)
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Добавить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 
 class Search_Book_Genre_Frame(Frame):
@@ -408,7 +764,7 @@ class Search_Book_Genre_Frame(Frame):
         frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
         search_entry = ttk.Entry(frame1)
         search_entry.grid(row=0, column=0, padx=6, sticky=EW)
-        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
         def sort(col, reverse):
             l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
@@ -433,13 +789,16 @@ class Search_Book_Genre_Frame(Frame):
 
             if (data != None):
                 for i in data:
-                    search_treeview.insert(parent='', index=END, values=i)
+                    search_treeview.insert(parent='', index=END, values=i, tags=i[len(i)-1])
 
-        def search_func():
-            add_data()
+        def add_book():
+            item = search_treeview.item(search_treeview.selection())
+            print(item["tags"][0])
 
-        search_button = ttk.Button(frame1, text="Поиск", command=search_func)
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
+        search_button = ttk.Button(frame1, text="Добавить", command=add_book)
+        search_button.grid(row=1, column=1, sticky=EW, padx=6)
 
 class Search_Book_Frame(Frame):
     def __init__(self, parent = None):
@@ -466,7 +825,8 @@ class Search_Book_Frame(Frame):
         publisher_frame.pack(fill=BOTH, expand=True)
         notebook.add(publisher_frame, text="По жанру")
 
-class Search_Publisher_Frame(Frame):
+
+class Search_Publisher_Name_Frame(Frame):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.pack(fill=BOTH, expand=True)
@@ -481,7 +841,7 @@ class Search_Publisher_Frame(Frame):
         frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
         search_entry = ttk.Entry(frame1)
         search_entry.grid(row=0, column=0, padx=6, sticky=EW)
-        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3"), show='headings', height=8)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
         def sort(col, reverse):
             l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
@@ -492,19 +852,93 @@ class Search_Publisher_Frame(Frame):
 
             search_treeview.heading(col, command=lambda: sort(col, not reverse))
 
-        search_treeview.heading("1", text="Имя", command=lambda: sort(0, False))
-        search_treeview.heading("2", text="Фамилия", command=lambda: sort(1, False))
-        search_treeview.heading("3", text="Отчество", command=lambda: sort(2, False))
+        search_treeview.heading("1", text="Название", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Город", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Электронная Почта", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Адрес", command=lambda: sort(3, False))
         search_treeview.pack(fill=BOTH, expand=True)
 
         def add_data():
-            pass
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            str = search_entry.get()
+            data = Database.search_publishers_by_name(str)
 
-        def search_func():
-            add_data()
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i)
 
-        search_button = ttk.Button(frame1, text="Поиск", command=search_func)
+
+
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
+
+
+class Search_Publisher_City_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    def __init_ui__(self):
+        frame1 = Frame(self)
+        frame1.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+        frame1.rowconfigure(0, weight=1)
+        frame1.columnconfigure(0, weight=15)
+        frame1.columnconfigure(1, weight=1)
+        frame2 = Frame(self)
+        frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
+        search_entry = ttk.Entry(frame1)
+        search_entry.grid(row=0, column=0, padx=6, sticky=EW)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
+
+        def sort(col, reverse):
+            l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
+            l.sort(reverse=reverse)
+
+            for index,  (_, k) in enumerate(l):
+                search_treeview.move(k, "", index)
+
+            search_treeview.heading(col, command=lambda: sort(col, not reverse))
+
+        search_treeview.heading("1", text="Название", command=lambda: sort(0, False))
+        search_treeview.heading("2", text="Город", command=lambda: sort(1, False))
+        search_treeview.heading("3", text="Электронная Почта", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Адрес", command=lambda: sort(3, False))
+        search_treeview.pack(fill=BOTH, expand=True)
+
+        def add_data():
+            for item in search_treeview.get_children():
+                search_treeview.delete(item)
+            str = search_entry.get()
+            data = Database.search_publishers_by_city(str)
+
+            if (data != None):
+                for i in data:
+                    search_treeview.insert(parent='', index=END, values=i)
+
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
+        search_button.grid(row=0, column=1, sticky=EW, padx=6)
+
+
+
+class Search_Publisher_Frame(Frame):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.pack(fill=BOTH, expand=True)
+        self.__init_ui__()
+    
+    def __init_ui__(self):
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=BOTH, expand=True)
+        
+        publisher_frame = Search_Publisher_Name_Frame(notebook)
+        publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(publisher_frame, text="По Названию")
+
+        publisher_frame = Search_Publisher_City_Frame(notebook)
+        publisher_frame.pack(fill=BOTH, expand=True)
+        notebook.add(publisher_frame, text="По Городу")
+    
         
 class Search_Author_Frame(Frame):
     def __init__(self, parent = None):
@@ -521,7 +955,7 @@ class Search_Author_Frame(Frame):
         frame2.place(relx=0, rely=0.1, relheight=0.9, relwidth=1)
         search_entry = ttk.Entry(frame1)
         search_entry.grid(row=0, column=0, padx=6, sticky=EW)
-        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3"), show='headings', height=8)
+        search_treeview = ttk.Treeview(frame2, columns=("1", "2", "3", "4"), show='headings', height=8, selectmode="browse")
 
         def sort(col, reverse):
             l = [(search_treeview.set(k, col), k) for k in search_treeview.get_children("")]
@@ -535,6 +969,7 @@ class Search_Author_Frame(Frame):
         search_treeview.heading("1", text="Имя", command=lambda: sort(0, False))
         search_treeview.heading("2", text="Фамилия", command=lambda: sort(1, False))
         search_treeview.heading("3", text="Отчество", command=lambda: sort(2, False))
+        search_treeview.heading("4", text="Рейтинг", command=lambda: sort(2, False))
         search_treeview.pack(fill=BOTH, expand=True)
 
         def add_data():
@@ -547,10 +982,9 @@ class Search_Author_Frame(Frame):
                 for i in data:
                     search_treeview.insert(parent='', index=END, values=i)
 
-        def search_func():
-            add_data()
 
-        search_button = ttk.Button(frame1, text="Поиск", command=search_func)
+
+        search_button = ttk.Button(frame1, text="Поиск", command=add_data)
         search_button.grid(row=0, column=1, sticky=EW, padx=6)
 
 
@@ -575,11 +1009,8 @@ class Search_Frame(Frame):
         publisher_frame = Search_Publisher_Frame(notebook)
         publisher_frame.pack(fill=BOTH, expand=True)
         notebook.add(publisher_frame, text="Издательства")
-    
-
 
 root = Application()
-
 root.mainloop()
 
 
