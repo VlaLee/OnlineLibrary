@@ -162,6 +162,8 @@ BEGIN
 	CREATE TRIGGER trg_update_author_rating AFTER UPDATE OR DELETE ON online_library_tables.book
 	FOR EACH ROW EXECUTE PROCEDURE online_library_functional.update_author_rating();
 
+	CREATE TRIGGER trg_delete_books_after_author_delete BEFORE DELETE ON online_library_tables.author
+	FOR EACH ROW EXECUTE FUNCTION online_library_functional.delete_books_after_author_delete();
 
 	---
 	--- ВСТАВКА ТЕСТОВЫХ ДАННЫХ
