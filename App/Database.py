@@ -78,7 +78,7 @@ def search_authors_by_author_nsp(arg : String):
 
     res = []
     for item in loads(row0):
-        tmp = (item['first_name'], item['last_name'], item['patronymic'], item['rating'])
+        tmp = (item['author_id'], item['first_name'], item['last_name'], item['patronymic'], item['rating'])
         res.append(tmp)
     return res
 
@@ -99,7 +99,7 @@ def search_books_by_title(arg : String):
 
     res = []
     for item in loads(row0):
-        tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['book_id'])
+        tmp = (item['book_id'], item['title'], item['genre'], item['publication_year'], item['rating'])
         res.append(tmp)
     return res
 
@@ -121,7 +121,7 @@ def search_books_by_author_nsp(arg : String):
 
     res = []
     for item in loads(row0):
-        tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['book_id'])
+        tmp = (item['book_id'], item['title'], item['genre'], item['publication_year'], item['rating'])
         res.append(tmp)
     return res
 
@@ -144,7 +144,7 @@ def search_books_by_publisher_name(arg : str):
 
     res = []
     for item in loads(row0):
-        tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['book_id'])
+        tmp = (item['book_id'], item['title'], item['genre'], item['publication_year'], item['rating'])
         res.append(tmp)
     return res
 
@@ -166,7 +166,7 @@ def search_publishers_by_city(arg : str):
 
     res = []
     for item in loads(row0):
-        tmp = (item['publisher_name'], item['city'], item['email'], item['address'])
+        tmp = (item['publisher_id'], item['publisher_name'], item['city'], item['email'], item['address'])
         res.append(tmp)
     return res
 
@@ -188,7 +188,7 @@ def search_publishers_by_name(arg : str):
 
     res = []
     for item in loads(row0):
-        tmp = (item['publisher_name'], item['city'], item['email'], item['address'])
+        tmp = (item['publisher_id'], item['publisher_name'], item['city'], item['email'], item['address'])
         res.append(tmp)
     return res
 
@@ -211,7 +211,7 @@ def search_books_by_genre(arg : str):
 
     res = []
     for item in loads(row0):
-        tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['book_id'])
+        tmp = (item['book_id'], item['title'], item['genre'], item['publication_year'], item['rating'])
         res.append(tmp)
     return res
 
@@ -273,7 +273,7 @@ def search_all_books():
 
     res = []
     for item in loads(row0):
-        tmp = (item['title'], item['genre'], item['publication_year'], item['rating'], item['book_id'])
+        tmp = (item['book_id'], item['title'], item['genre'], item['publication_year'], item['rating'])
         res.append(tmp)
     return res
 
@@ -294,7 +294,7 @@ def search_all_authors():
     row0 += "]"
     res = []
     for item in loads(row0):
-        tmp = (item['first_name'], item['last_name'], item['patronymic'], item['rating'])
+        tmp = (item['author_id'], item['first_name'], item['last_name'], item['patronymic'], item['rating'])
         res.append(tmp)
     return res
 
@@ -315,7 +315,7 @@ def search_all_publishers():
     row0 += "]"
     res = []
     for item in loads(row0):
-        tmp = (item['publisher_name'], item['city'], item['email'], item['address'])
+        tmp = (item['publisher_id'], item['publisher_name'], item['city'], item['email'], item['address'])
         res.append(tmp)
     return res
 
@@ -343,7 +343,7 @@ def search_all_my_books():
     row0 += "]"
     res = []
     for item in loads(row0):
-        tmp = (item['title'], item['genre'], item['user_rating'], item['saving_date'], item['saving_id'])
+        tmp = (item['saving_id'], item['title'], item['genre'], item['user_rating'], item['saving_date'])
         res.append(tmp)
     return res
 
@@ -367,7 +367,7 @@ def search_all_users():
         res.append(tmp)
     return res
 
-def remove_book(id: int):
+def remove_book_in_saving(id: int):
     session.execute(func.online_library_functional.delete_row_by_id('saving', 'saving_id', id))
     session.commit()
 
@@ -386,3 +386,33 @@ def initialize_database():
 
 def rate_book(id: int, rate: int):
     session.execute(func.online_library_functional.set_rating_into_table_saving(id, rate))
+    session.commit()
+
+def delete_author(id: int):
+    session.execute(func.online_library_functional.delete_row_by_id('author', 'author_id', id))
+    session.commit()
+
+def delete_book(id: int):
+    session.execute(func.online_library_functional.delete_row_by_id('book', 'book_id', id))
+    session.commit()
+
+def delete_publisher(id: int):
+    session.execute(func.online_library_functional.delete_row_by_id('publisher', 'publisher_id', id))
+    session.commit()
+
+def add_book(in_title: str, in_genre: str, in_publisher_id: int, in_publication_year: int, author_id: int):
+    data = session.execute(func.online_library_functional.insert_into_table_book(in_title, in_genre, in_publisher_id, in_publication_year)).all()
+    session.commit()
+    session.execute(func.online_library_functional.insert_into_table_book_author(data[0][0], author_id))
+    session.commit()
+
+
+def add_author(in_first_name: str, in_last_name: str, in_patronymic: str):
+    session.execute(func.online_library_functional.insert_into_table_author(in_first_name, in_last_name, in_patronymic))
+    session.commit()
+    session.execute(func.online_library_functional.insert_into_table_book_author())
+
+def add_publisher(in_name: str, city: str, adress: str, email: str):
+    session.execute(func.online_library_functional.insert_into_table_publisher(in_name, city, adress, email))
+    session.commit()
+
