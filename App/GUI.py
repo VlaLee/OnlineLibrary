@@ -2,6 +2,11 @@ from tkinter import *
 from tkinter import ttk
 import Database
 
+# try:
+#     Database.initialize_database()
+# except:
+#     pass
+
 class Application(Tk):
     def __init__(self, screenName = "Data Base Lab", baseName = None, className = "Tk", useTk = True, sync = False, use = None):
         super().__init__(screenName, baseName, className, useTk, sync, use)
@@ -15,10 +20,7 @@ class Application(Tk):
         self.__screenName = screenName
 
         # Database.drop_database()        
-        try:
-            Database.initialize_database()
-        except:
-            pass
+
 
 
         self.login_show()
@@ -177,27 +179,13 @@ class Application(Tk):
         def login():
             login = login_entry.get()
             password = password_entry.get()
-
-
-
-
-
-# ####################################################################################################
-#             self.user_data["role"] = "admin"
-#             self.show_menu()
-#             return
-# ####################################################################################################
-
-
-
-
             data = Database.login_func_data(login=login, password=password)
             if data != None:
                 self.user_data["username"] = login_entry.get()
                 if (data["is_admin"]):
                     self.user_data["role"] = "admin"
                 else:
-                    self.user_data["role"] = "admin"
+                    self.user_data["role"] = "user"
                 self.user_data["id"] = int(data["user_id"])
                 self.show_menu()
             else:
@@ -361,28 +349,10 @@ class Buttons_Frame(Frame):
 
         def drop_database():
             Database.drop_database()
-        def init_database():
-            Database.initialize_database()
 
-        label = Label(frame, text="Кнопочки")
-        label.pack()
-        button1 = ttk.Button(frame, text="Удалить Таблицу", command=drop_database)
+        button1 = ttk.Button(frame, text="Удалить Базу Данных", command=drop_database)
         button1.pack()
 
-        label = Label(frame, text="Кнопочки")
-        label.pack()
-        button1 = ttk.Button(frame, text="Создать Таблицу", command=init_database)
-        button1.pack()
-
-        label = Label(frame, text="Кнопочки")
-        label.pack()
-        button1 = ttk.Button(frame, text="Обновить", command=None)
-        button1.pack()
-
-        label = Label(frame, text="Кнопочки")
-        label.pack()
-        button1 = ttk.Button(frame, text="Обновить", command=None)
-        button1.pack()
 
 class Delete_Book_Title_Frame(Frame):
     def __init__(self, parent = None):
@@ -955,12 +925,12 @@ class Add_Author_Frame(Frame):
         firstname_entry = Entry(self)
         firstname_entry.pack()
 
-        lastname_label = Label(self, text="Имя")
+        lastname_label = Label(self, text="Фамилия")
         lastname_label.pack()
         lastname_entry = Entry(self)
         lastname_entry.pack()
 
-        patronymic_label = Label(self, text="Имя")
+        patronymic_label = Label(self, text="Отчество")
         patronymic_label.pack()
         patronymic_entry = Entry(self)
         patronymic_entry.pack()
@@ -991,12 +961,12 @@ class Edit_Author_Frame(Frame):
         firstname_entry = Entry(self)
         firstname_entry.pack()
 
-        lastname_label = Label(self, text="Имя")
+        lastname_label = Label(self, text="Фамилия")
         lastname_label.pack()
         lastname_entry = Entry(self)
         lastname_entry.pack()
 
-        patronymic_label = Label(self, text="Имя")
+        patronymic_label = Label(self, text="Отчество")
         patronymic_label.pack()
         patronymic_entry = Entry(self)
         patronymic_entry.pack()
@@ -1024,17 +994,17 @@ class Add_Publisher_Frame(Frame):
         title_entry = Entry(self)
         title_entry.pack()
 
-        city_label = Label(self, text="Название")
+        city_label = Label(self, text="Город")
         city_label.pack()
         city_entry = Entry(self)
         city_entry.pack()
 
-        adress_label = Label(self, text="Название")
+        adress_label = Label(self, text="Адрес")
         adress_label.pack()
         adress_entry = Entry(self)
         adress_entry.pack()
         
-        email_label = Label(self, text="Название")
+        email_label = Label(self, text="Эл. Почта")
         email_label.pack()
         email_entry = Entry(self)
         email_entry.pack()

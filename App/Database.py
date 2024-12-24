@@ -7,48 +7,26 @@ from cryptography.fernet import Fernet
 
 
 
-class Book():
+class init():
     def __init__(self):
-        self.book_data = {
-            'title': None,
-            'id': None,
-            'genre': None,
-            'publication_year': None,
-            'rating': None
-        }
-    def __init__(self, title, genre, id, publication_year, rating):
-        self.book_data = {
-            'title': title,
-            'id': id,
-            'genre': genre,
-            'publication_year': publication_year,
-            'rating': rating
-        }
+        self.login = 'library_owner'
+        self.password = '102255'
 
-def init():
-    login = 'library_owner'
-    password = '102255'
+        self.engine = create_engine(
+            F'postgresql+psycopg2://{self.login}:{self.password}@localhost/library',
+            echo=False,
+            isolation_level='SERIALIZABLE'
+        )
 
-    engine = create_engine(
-        F'postgresql+psycopg2://{login}:{password}@localhost/library',
-        echo=False,
-        isolation_level='SERIALIZABLE'
-    )
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
 
-    Base = declarative_base()
-    metadata = MetaData()
+session = init()
 
-    Session = sessionmaker(bind=engine)
-
-    session = Session()
-
-    return session
-
-session = init() 
 
 
 def search_authors_by_author_nsp(arg : String):
-    data = session.query(func.online_library_functional.search_authors_by_author_nsp(arg)).all()
+    data = session.session.query(func.online_library_functional.search_authors_by_author_nsp(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -69,7 +47,7 @@ def search_authors_by_author_nsp(arg : String):
     return res
 
 def search_books_by_title(arg : String):
-    data = session.query(func.online_library_functional.search_books_by_title(arg)).all()
+    data = session.session.query(func.online_library_functional.search_books_by_title(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -91,7 +69,7 @@ def search_books_by_title(arg : String):
 
 
 def search_books_by_author_nsp(arg : String):
-    data = session.query(func.online_library_functional.search_books_by_author_nsp(arg)).all()
+    data = session.session.query(func.online_library_functional.search_books_by_author_nsp(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -114,7 +92,7 @@ def search_books_by_author_nsp(arg : String):
 
 
 def search_books_by_publisher_name(arg : str):
-    data = session.query(func.online_library_functional.search_books_by_publisher_name(arg)).all()
+    data = session.session.query(func.online_library_functional.search_books_by_publisher_name(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -136,7 +114,7 @@ def search_books_by_publisher_name(arg : str):
 
 
 def search_publishers_by_city(arg : str):
-    data = session.query(func.online_library_functional.search_publishers_by_city(arg)).all()
+    data = session.session.query(func.online_library_functional.search_publishers_by_city(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -158,7 +136,7 @@ def search_publishers_by_city(arg : str):
 
 
 def search_publishers_by_name(arg : str):
-    data = session.query(func.online_library_functional.search_publishers_by_name(arg)).all()
+    data = session.session.query(func.online_library_functional.search_publishers_by_name(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -181,7 +159,7 @@ def search_publishers_by_name(arg : str):
 
 
 def search_books_by_genre(arg : str):
-    data = session.execute(func.online_library_functional.search_books_by_genre(arg)).all()
+    data = session.session.execute(func.online_library_functional.search_books_by_genre(arg)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -205,7 +183,7 @@ def search_books_by_genre(arg : str):
 def login_func_data(login : str, password : str) -> int:
     # login = encrypte_string(login)
     # password = encrypte_string(password)
-    data = session.execute(func.online_library_functional.get_user_id_and_is_admin_by_user_email_and_password(login, password)).all()
+    data = session.session.execute(func.online_library_functional.get_user_id_and_is_admin_by_user_email_and_password(login, password)).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -231,19 +209,13 @@ def register_func_data(
 	is_admin = False,
 	patronymic = None
 ):
-    # first_name = encrypte_string(first_name)
-    # last_name = encrypte_string(last_name)
-    # phone = encrypte_string(phone)
-    # email = encrypte_string(email)
-    # password = encrypte_string(password)
-    # patronymic = encrypte_string(patronymic)
 
-    session.execute(func.online_library_functional.insert_into_table_user(first_name, last_name, phone, email, password, is_admin, patronymic))
-    session.commit()
+    session.session.execute(func.online_library_functional.insert_into_table_user(first_name, last_name, phone, email, password, is_admin, patronymic))
+    session.session.commit()
 
 
 def search_all_books():
-    data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('book')).all()
+    data = session.session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('book')).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -265,7 +237,7 @@ def search_all_books():
 
 
 def search_all_authors():
-    data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('author')).all()
+    data = session.session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('author')).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -286,7 +258,7 @@ def search_all_authors():
 
 
 def search_all_publishers():
-    data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('publisher')).all()
+    data = session.session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('publisher')).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -306,15 +278,11 @@ def search_all_publishers():
     return res
 
 def insert_into_table_saving(id: int, arg: int):
-    session.execute(func.online_library_functional.insert_into_table_saving(id, arg))
-    session.commit()
-
-def remove_into_table_saving(id: int, arg: int):
-    # session.execute(func.online_library_functional.insert_into_table_saving(id, arg)).all()
-    session.commit()
+    session.session.execute(func.online_library_functional.insert_into_table_saving(id, arg))
+    session.session.commit()
 
 def search_all_my_books():
-    data = session.execute(func.online_library_functional.get_all_data_from_table_saving()).all()
+    data = session.session.execute(func.online_library_functional.get_all_data_from_table_saving()).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -334,7 +302,7 @@ def search_all_my_books():
     return res
 
 def search_all_users():
-    data = session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('user')).all()
+    data = session.session.execute(func.online_library_functional.get_all_data_from_table_by_table_name('user')).all()
     row0 = "["
     for row in data:
         if (row[0] != None):
@@ -354,64 +322,62 @@ def search_all_users():
     return res
 
 def remove_book_in_saving(id: int):
-    session.execute(func.online_library_functional.delete_row_by_id('saving', 'saving_id', id))
-    session.commit()
+    session.session.execute(func.online_library_functional.delete_row_by_id('saving', 'saving_id', id))
+    session.session.commit()
 
 
 def drop_database():
-    session.execute(func.online_library_init.drop_database())
-    session.commit()
+    session.session.execute(func.online_library_init.drop_database())
+    session.session.commit()
 
 
 def initialize_database():
-    session.execute(func.online_library_init.initialize_database())
-    session.commit()
-    session.close()
-    session = init()
+    session.session.execute(func.online_library_init.initialize_database())
+    session.session.commit()
 
 
 def rate_book(id: int, rate: int):
-    session.execute(func.online_library_functional.set_rating_into_table_saving(id, rate))
-    session.commit()
+    session.session.execute(func.online_library_functional.set_rating_into_table_saving(id, rate))
+    session.session.commit()
 
 def delete_author(id: int):
-    session.execute(func.online_library_functional.delete_row_by_id('author', 'author_id', id))
-    session.commit()
+    session.session.execute(func.online_library_functional.delete_row_by_id('author', 'author_id', id))
+    session.session.commit()
 
 def delete_book(id: int):
-    session.execute(func.online_library_functional.delete_row_by_id('book', 'book_id', id))
-    session.commit()
+    session.session.execute(func.online_library_functional.delete_row_by_id('book', 'book_id', id))
+    session.session.commit()
 
 def delete_publisher(id: int):
-    session.execute(func.online_library_functional.delete_row_by_id('publisher', 'publisher_id', id))
-    session.commit()
+    session.session.execute(func.online_library_functional.delete_row_by_id('publisher', 'publisher_id', id))
+    session.session.commit()
 
 def add_book(in_title: str, in_genre: str, in_publisher_id: int, in_publication_year: int, author_id: int):
-    data = session.execute(func.online_library_functional.insert_into_table_book(in_title, in_genre, in_publisher_id, in_publication_year)).all()
-    session.commit()
-    session.execute(func.online_library_functional.insert_into_table_book_author(data[0][0], author_id))
-    session.commit()
+    data = session.session.execute(func.online_library_functional.insert_into_table_book(in_title, in_genre, in_publisher_id, in_publication_year)).all()
+    session.session.commit()
+    session.session.execute(func.online_library_functional.insert_into_table_book_author(data[0][0], author_id))
+    session.session.commit()
 
 
 def add_author(in_first_name: str, in_last_name: str, in_patronymic: str):
-    session.execute(func.online_library_functional.insert_into_table_author(in_first_name, in_last_name, in_patronymic))
-    session.commit()
+    session.session.execute(func.online_library_functional.insert_into_table_author(in_first_name, in_last_name, in_patronymic))
+    session.session.commit()
 
 def add_publisher(in_name: str, city: str, adress: str, email: str):
-    session.execute(func.online_library_functional.insert_into_table_publisher(in_name, city, adress, email))
-    session.commit()
+    session.session.execute(func.online_library_functional.insert_into_table_publisher(in_name, city, adress, email))
+    session.session.commit()
 
 def edit_publisher(id: int, title: str, city: str, adress: str, email: str):
-    session.execute(func.online_library_functional.update_into_table_publisher(id, title, city, adress, email))
-    session.commit()
+    session.session.execute(func.online_library_functional.update_into_table_publisher(id, title, city, adress, email))
+    session.session.commit()
 
 def edit_book(id: int, in_title: str, in_genre: str, in_publisher_id: int, in_publication_year: int, author_id: int):
-    session.execute(func.online_library_functional.update_into_table_book(id, in_title, in_genre, in_publisher_id, in_publication_year)).all()
-    session.commit()
+    session.session.execute(func.online_library_functional.update_into_table_book(id, in_title, in_genre, in_publisher_id, in_publication_year)).all()
+    session.session.commit()
 def edit_author(id: int, in_first_name: str, in_last_name: str, in_patronymic: str):
-    session.execute(func.online_library_functional.update_into_table_author(id, in_first_name, in_last_name, in_patronymic))
-    session.commit()
+    session.session.execute(func.online_library_functional.update_into_table_author(id, in_first_name, in_last_name, in_patronymic))
+    session.session.commit()
 
 def delete_user(id: int):
-    session.execute(func.online_library_functional.delete_row_by_id('user', 'user_id', id))
-    session.commit()
+    session.session.execute(func.online_library_functional.delete_row_by_id('user', 'user_id', id))
+    session.session.commit()
